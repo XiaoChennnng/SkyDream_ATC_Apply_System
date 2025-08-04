@@ -1,6 +1,6 @@
 <div align="center">
   <img src="./public/logo.png" alt="SkyDream Logo" width="500">
-  <h1>✈️ SkyDream 管制员申请及管理系统 🛫</h1>
+  <h1>✈️ SkyDream 管制员申请管理系统 🛫</h1>
 </div>
 
 嗨！欢迎来到 **SkyDream 飞行俱乐部** 👋 这是一个超棒的模飞聚集地！
