@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/logo.png" alt="SkyDream Logo" width="350">
+  <img src="./public/logo.png" alt="SkyDream Logo" width="500">
   <h1>✈️ SkyDream 管制员申请及管理系统 🛫</h1>
 </div>
 
