@@ -13,31 +13,61 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
           <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSDog4zmma/lnIblvaIgLS0+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI5MCIgZmlsbD0iIzBhMjQ2MyIgLz4KICAKICA8IS0tIOmTvuacuuWbviAtLT4KICA8cGF0aCBkPSJNMTYwLDEwMCBDMTYwLDcwIDEzMCw1MCAxMDAsNTAgQzcwLDUwIDQwLDcwIDQwLDEwMCBDNDAsMTMwIDcwLDE1MCAxMDAsMTUwIEMxMzAsMTUwIDE2MCwxMzAgMTYwLDEwMCBaIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjEiIC8+CiAgCiAgPCEtLSDlrZfmr40gUyAtLT4KICA8cGF0aCBkPSJNODAsNzAgQzkwLDY1IDExMCw2NSAxMjAsNzAgQzEzMCw3NSAxMzAsODUgMTIwLDkwIEMxMTAsOTUgOTAsOTUgODAsOTAgQzcwLDg1IDcwLDc1IDgwLDcwIFoiIGZpbGw9IiNmZmZmZmYiIC8+CiAgPHBhdGggZD0iTTgwLDExMCBDOTAsMTA1IDExMCwxMDUgMTIwLDExMCBDMTMwLDExNSAxMzAsMTI1IDEyMCwxMzAgQzExMCwxMzUgOTAsMTM1IDgwLDEzMCBDNzAsMTI1IDcwLDExNSA4MCwxMTAgWiIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8cGF0aCBkPSJNMTIwLDkwIEwxMjAsMTEwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMTAiIC8+CiAgCiAgPCEtLSDpo57mnLrova/ovr4gLS0+CiAgPHBhdGggZD0iTTMwLDEyMCBRMTAwLDYwIDE3MCwxMjAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtZGFzaGFycmF5PSI1LDUiIC8+CiAgCiAgPCEtLSDmlofmnKwgLS0+CiAgPHRleHQgeD0iMTAwIiB5PSIxODAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNLWURSRUFNPC90ZXh0Pgo8L3N2Zz4=" alt="Skydream Logo" style={{ height: '60px' }} />
         </div>
         
-        {/* 用户信息 */}
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>用户信息</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <p><strong>呼号:</strong> {report.user.callsign}</p>
-            <p><strong>姓名:</strong> {report.user.name}</p>
-            <p><strong>邮箱:</strong> {report.user.email}</p>
-            <p><strong>QQ:</strong> {report.user.qq || '未提供'}</p>
-            <p><strong>电话:</strong> {report.user.phone || '未提供'}</p>
-            <p><strong>权限:</strong> {report.user.permissions.join(', ') || '无'}</p>
-            <p><strong>注册时间:</strong> {formatDate(report.user.createdAt)}</p>
-          </div>
-        </div>
-        
-        {/* 评分摘要 */}
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>评分摘要</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <p><strong>可靠性评分:</strong> {report.summary.reliability}</p>
-            <p><strong>活跃度评分:</strong> {report.summary.activityLevel}</p>
-            <p><strong>成功率评分:</strong> {report.summary.successRate}</p>
-            <p><strong>违规影响评分:</strong> {report.summary.violationImpact}</p>
-            <p><strong>综合评分:</strong> {report.summary.overallScore}</p>
-          </div>
-        </div>
+      {/* 用户信息 */}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '18px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>用户信息</h2>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}><strong>呼号</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}>{report.user.callsign}</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}><strong>姓名</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}>{report.user.name}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>邮箱</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{report.user.email}</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>QQ</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{report.user.qq || '未提供'}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>电话</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{report.user.phone || '未提供'}</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>注册时间</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{formatDate(report.user.createdAt)}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>权限</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }} colSpan={3}>{report.user.permissions.join(', ') || '无'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      {/* 评分摘要 */}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '18px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>评分摘要</h2>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}><strong>可靠性评分</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}>{report.summary.reliability}</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}><strong>活跃度评分</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd', width: '25%' }}>{report.summary.activityLevel}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>成功率评分</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{report.summary.successRate}</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>违规影响评分</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}>{report.summary.violationImpact}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }}><strong>综合评分</strong></td>
+              <td style={{ padding: '4px 8px', border: '1px solid #ddd' }} colSpan={3}>{report.summary.overallScore}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
         
         {/* 申请记录 */}
         <div style={{ marginBottom: '20px' }}>
@@ -57,7 +87,9 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                 <tr style={{ backgroundColor: '#0a2463', color: 'white' }}>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>申请类型</th>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
-                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>处理日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>处理人</th>
                 </tr>
               </thead>
               <tbody>
@@ -68,6 +100,14 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                       {record.status === 'approved' ? '已批准' : record.status === 'rejected' ? '已拒绝' : '待处理'}
                     </td>
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>{formatDate(record.date)}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                      {record.status !== 'pending' 
+                        ? formatDate(record.status === 'approved' 
+                            ? record.details.approvedAt 
+                            : record.details.rejectedAt) 
+                        : '-'}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -94,7 +134,10 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>考试类型</th>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>结果</th>
-                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>分数</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>考试日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>监考人</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,7 +152,14 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>
                       {record.result === 'pass' ? '通过' : record.result === 'fail' ? '未通过' : '未评分'}
                     </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.details.score || '-'}</td>
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>{formatDate(record.date)}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                      {record.status !== 'pending' 
+                        ? formatDate(record.details.examDate || record.details.preferredDate) 
+                        : formatDate(record.details.preferredDate)}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -136,7 +186,10 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>管制席位</th>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
                   <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>结果</th>
-                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>获得权限</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>活动日期</th>
+                  <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>负责教员</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,7 +202,16 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>
                       {record.result === 'pass' ? '通过' : record.result === 'fail' ? '未通过' : '未评分'}
                     </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                      {record.details.permission ? record.details.permission : '-'}
+                    </td>
                     <td style={{ padding: '8px', border: '1px solid #ddd' }}>{formatDate(record.date)}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                      {record.status !== 'pending' 
+                        ? formatDate(record.details.activityDate || record.details.preferredDate) 
+                        : formatDate(record.details.preferredDate)}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -382,7 +444,9 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                   <tr>
                     <th>申请类型</th>
                     <th>状态</th>
-                    <th>日期</th>
+                    <th>申请日期</th>
+                    <th>处理日期</th>
+                    <th>处理人</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -393,6 +457,14 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                         ${record.status === 'approved' ? '已批准' : record.status === 'rejected' ? '已拒绝' : '待处理'}
                       </td>
                       <td>${formatDate(record.date)}</td>
+                      <td>
+                        ${record.status !== 'pending' 
+                          ? formatDate(record.status === 'approved' 
+                              ? record.details.approvedAt 
+                              : record.details.rejectedAt) 
+                          : '-'}
+                      </td>
+                      <td>${record.details.teacherCallsign || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -419,7 +491,10 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                     <th>考试类型</th>
                     <th>状态</th>
                     <th>结果</th>
-                    <th>日期</th>
+                    <th>分数</th>
+                    <th>申请日期</th>
+                    <th>考试日期</th>
+                    <th>监考人</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -434,7 +509,14 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                       <td>
                         ${record.result === 'pass' ? '通过' : record.result === 'fail' ? '未通过' : '未评分'}
                       </td>
+                      <td>${record.details.score || '-'}</td>
                       <td>${formatDate(record.date)}</td>
+                      <td>
+                        ${record.status !== 'pending' 
+                          ? formatDate(record.details.examDate || record.details.preferredDate) 
+                          : formatDate(record.details.preferredDate)}
+                      </td>
+                      <td>${record.details.teacherCallsign || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -461,7 +543,10 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                     <th>管制席位</th>
                     <th>状态</th>
                     <th>结果</th>
-                    <th>日期</th>
+                    <th>获得权限</th>
+                    <th>申请日期</th>
+                    <th>活动日期</th>
+                    <th>负责教员</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -474,7 +559,16 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                       <td>
                         ${record.result === 'pass' ? '通过' : record.result === 'fail' ? '未通过' : '未评分'}
                       </td>
+                      <td>
+                        ${record.details.permission ? record.details.permission : '-'}
+                      </td>
                       <td>${formatDate(record.date)}</td>
+                      <td>
+                        ${record.status !== 'pending' 
+                          ? formatDate(record.details.activityDate || record.details.preferredDate) 
+                          : formatDate(record.details.preferredDate)}
+                      </td>
+                      <td>${record.details.teacherCallsign || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
