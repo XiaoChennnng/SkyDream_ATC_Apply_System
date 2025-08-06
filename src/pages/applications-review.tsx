@@ -324,7 +324,7 @@ export function ApplicationsReviewPage() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">申请理由</p>
                   <p className="bg-muted p-3 rounded-md text-sm">
-                    {applicationDetails[selectedApplication].applicationReason}
+                    {applicationDetails[selectedApplication].reason || applicationDetails[selectedApplication].applicationReason || '未填写'}
                   </p>
                 </div>
 
