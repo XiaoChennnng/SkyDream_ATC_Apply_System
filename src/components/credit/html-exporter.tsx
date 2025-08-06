@@ -34,6 +34,7 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
             <p><strong>可靠性评分:</strong> {report.summary.reliability}</p>
             <p><strong>活跃度评分:</strong> {report.summary.activityLevel}</p>
             <p><strong>成功率评分:</strong> {report.summary.successRate}</p>
+            <p><strong>违规影响评分:</strong> {report.summary.violationImpact}</p>
             <p><strong>综合评分:</strong> {report.summary.overallScore}</p>
           </div>
         </div>
@@ -153,6 +154,81 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+        
+        {/* 违规记录 */}
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>违规记录</h2>
+          <div style={{ marginBottom: '10px' }}>
+            <p>
+              <strong>总违规数:</strong> {report.violations.total} | 
+              <strong> 轻微:</strong> {report.violations.minor} | 
+              <strong> 中度:</strong> {report.violations.moderate} | 
+              <strong> 严重:</strong> {report.violations.severe}
+            </p>
+          </div>
+          
+          {report.violations.records.length > 0 ? (
+            <>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#0a2463', color: 'white' }}>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>违规标题</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>严重程度</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>报告人</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>日期</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.violations.records.map((record, index) => (
+                    <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white' }}>
+                      <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.title}</td>
+                      <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                        {record.severity === 'minor' ? '轻微' : record.severity === 'moderate' ? '中度' : '严重'}
+                      </td>
+                      <td style={{ padding: '8px', border: '1px solid #ddd' }}>{record.reportedBy} ({record.reporterCallsign})</td>
+                      <td style={{ padding: '8px', border: '1px solid #ddd' }}>{formatDate(record.date)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div style={{ marginTop: '15px' }}>
+                {report.violations.records.map((record, index) => (
+                  <div key={index} style={{ 
+                    marginTop: '10px', 
+                    padding: '10px', 
+                    border: '1px solid #ddd', 
+                    borderRadius: '4px', 
+                    backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white' 
+                  }}>
+                    <h3 style={{ marginTop: 0, fontSize: '16px' }}>{record.title}</h3>
+                    <p style={{ marginBottom: '5px' }}>
+                      <strong>严重程度:</strong> 
+                      <span style={{ 
+                        padding: '2px 6px', 
+                        borderRadius: '10px', 
+                        fontSize: '12px', 
+                        backgroundColor: record.severity === 'minor' ? '#fff3cd' : record.severity === 'moderate' ? '#ffe5d0' : '#ffcccc',
+                        color: record.severity === 'minor' ? '#856404' : record.severity === 'moderate' ? '#ad6200' : '#721c24'
+                      }}>
+                        {record.severity === 'minor' ? '轻微' : record.severity === 'moderate' ? '中度' : '严重'}
+                      </span>
+                    </p>
+                    <p style={{ marginBottom: '5px' }}><strong>报告人:</strong> {record.reportedBy} ({record.reporterCallsign})</p>
+                    <p style={{ marginBottom: '5px' }}><strong>日期:</strong> {formatDate(record.date)}</p>
+                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+                      <p style={{ margin: 0 }}>{record.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <p>暂无违规记录</p>
+            </div>
           )}
         </div>
         
@@ -283,6 +359,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
               <p><strong>可靠性评分:</strong> ${report.summary.reliability}</p>
               <p><strong>活跃度评分:</strong> ${report.summary.activityLevel}</p>
               <p><strong>成功率评分:</strong> ${report.summary.successRate}</p>
+              <p><strong>违规影响评分:</strong> ${report.summary.violationImpact}</p>
               <p><strong>综合评分:</strong> ${report.summary.overallScore}</p>
             </div>
           </div>
@@ -403,6 +480,68 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                 </tbody>
               </table>
             ` : ''}
+          </div>
+          
+          <!-- 违规记录 -->
+          <div class="section">
+            <h2>违规记录</h2>
+            <div>
+              <p>
+                <strong>总违规数:</strong> ${report.violations.total} | 
+                <strong> 轻微:</strong> ${report.violations.minor} | 
+                <strong> 中度:</strong> ${report.violations.moderate} | 
+                <strong> 严重:</strong> ${report.violations.severe}
+              </p>
+            </div>
+            
+            ${report.violations.records.length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>违规标题</th>
+                    <th>严重程度</th>
+                    <th>报告人</th>
+                    <th>日期</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${report.violations.records.map((record, index) => `
+                    <tr style="background-color: ${index % 2 === 0 ? '#f9f9f9' : 'white'}">
+                      <td>${record.title}</td>
+                      <td>
+                        ${record.severity === 'minor' ? '轻微' : record.severity === 'moderate' ? '中度' : '严重'}
+                      </td>
+                      <td>${record.reportedBy} (${record.reporterCallsign})</td>
+                      <td>${formatDate(record.date)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              
+              ${report.violations.records.map((record, index) => `
+                <div style="margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: ${index % 2 === 0 ? '#f9f9f9' : 'white'}">
+                  <h3 style="margin-top: 0; font-size: 16px;">${record.title}</h3>
+                  <p style="margin-bottom: 5px;"><strong>严重程度:</strong> 
+                    <span style="padding: 2px 6px; border-radius: 10px; font-size: 12px; background-color: ${
+                      record.severity === 'minor' ? '#fff3cd' : 
+                      record.severity === 'moderate' ? '#ffe5d0' : 
+                      '#ffcccc'
+                    }; color: ${
+                      record.severity === 'minor' ? '#856404' : 
+                      record.severity === 'moderate' ? '#ad6200' : 
+                      '#721c24'
+                    };">
+                      ${record.severity === 'minor' ? '轻微' : record.severity === 'moderate' ? '中度' : '严重'}
+                    </span>
+                  </p>
+                  <p style="margin-bottom: 5px;"><strong>报告人:</strong> ${record.reportedBy} (${record.reporterCallsign})</p>
+                  <p style="margin-bottom: 5px;"><strong>日期:</strong> ${formatDate(record.date)}</p>
+                  <div style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 4px;">
+                    <p style="margin: 0;">${record.description}</p>
+                  </div>
+                </div>
+              `).join('')}
+            ` : '<p>暂无违规记录</p>'}
           </div>
           
           <!-- 页脚 -->

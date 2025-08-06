@@ -88,6 +88,19 @@ export function OverviewTab({ report, formatDate }: OverviewTabProps) {
               
               <div>
                 <div className="flex justify-between mb-1">
+                  <span className="text-sm">违规影响</span>
+                  <span className="text-sm font-medium">{report.summary.violationImpact}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary rounded-full h-2" 
+                    style={{ width: `${report.summary.violationImpact}%` }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between mb-1">
                   <span className="text-sm font-medium">综合评分</span>
                   <span className="text-sm font-medium">{report.summary.overallScore}%</span>
                 </div>
@@ -107,7 +120,7 @@ export function OverviewTab({ report, formatDate }: OverviewTabProps) {
         </Card>
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">申请统计</CardTitle>
@@ -181,6 +194,32 @@ export function OverviewTab({ report, formatDate }: OverviewTabProps) {
               <div>
                 <div className="text-lg font-medium text-yellow-600">{report.activities.pending}</div>
                 <div className="text-xs text-muted-foreground">待完成</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">违规统计</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="text-center py-2">
+              <div className="text-3xl font-bold">{report.violations.total}</div>
+              <div className="text-sm text-muted-foreground">总违规数</div>
+            </div>
+            <div className="grid grid-cols-3 text-center mt-4">
+              <div>
+                <div className="text-lg font-medium text-yellow-600">{report.violations.minor}</div>
+                <div className="text-xs text-muted-foreground">轻微</div>
+              </div>
+              <div>
+                <div className="text-lg font-medium text-orange-600">{report.violations.moderate}</div>
+                <div className="text-xs text-muted-foreground">中度</div>
+              </div>
+              <div>
+                <div className="text-lg font-medium text-red-600">{report.violations.severe}</div>
+                <div className="text-xs text-muted-foreground">严重</div>
               </div>
             </div>
           </CardContent>

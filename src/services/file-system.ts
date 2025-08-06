@@ -361,6 +361,55 @@ const deleteUserAttachment = async (callsign: string, attachmentId: string) => {
   }
 };
 
+// 删除用户
+const deleteUser = async (callsign: string) => {
+  try {
+    // 删除用户目录下的所有文件
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+    
+    // 删除用户的申请、考试、活动和附件目录
+    const applicationFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/applications`);
+    for (const file of applicationFiles) {
+      await api.deleteFile(`${BASE_PATH}/users/${callsign}/applications/${file}`);
+    }
+    
+    const examFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/exams`);
+    for (const file of examFiles) {
+      await api.deleteFile(`${BASE_PATH}/users/${callsign}/exams/${file}`);
+    }
+    
+    const activityFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/activities`);
+    for (const file of activityFiles) {
+      await api.deleteFile(`${BASE_PATH}/users/${callsign}/activities/${file}`);
+    }
+    
+    const attachmentFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/attachments`);
+    for (const file of attachmentFiles) {
+      await api.deleteFile(`${BASE_PATH}/users/${callsign}/attachments/${file}`);
+    }
+    
+    // 删除用户目录
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}/applications`);
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}/exams`);
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}/activities`);
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}/attachments`);
+    await api.deleteFile(`${BASE_PATH}/users/${callsign}`);
+    
+    // 更新文件系统索引
+    const fs = await initFileSystem();
+    if (fs.users[callsign]) {
+      delete fs.users[callsign];
+      await saveFileSystemIndex(fs);
+    }
+    
+    console.log(`用户 ${callsign} 已被删除`);
+    return true;
+  } catch (error) {
+    console.error(`删除用户失败: ${callsign}`, error);
+    return false;
+  }
+};
+
 // 获取所有用户
 const getAllUsers = async () => {
   try {
@@ -490,6 +539,7 @@ export const fileSystem = {
   getUserAttachments,
   getUserAttachment,
   deleteUserAttachment,
+  deleteUser,
   getAllUsers,
   getAllApplications,
   getAllExams,

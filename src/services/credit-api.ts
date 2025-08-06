@@ -3,17 +3,31 @@
  * 用于获取用户的征信信息
  */
 import { userApi, applicationApi, examApi, activityApi, attachmentApi } from './api';
+import { violationApi } from './violation-api';
 
 // 征信记录类型
 export interface CreditRecord {
   id: string;
   userId: string;
   callsign: string;
-  type: 'application' | 'exam' | 'activity';
+  type: 'application' | 'exam' | 'activity' | 'violation';
   status: string;
   result?: string;
   date: string;
   details: any;
+}
+
+// 违规记录类型
+export interface ViolationRecord {
+  id: string;
+  userId: string;
+  callsign: string;
+  title: string;
+  description: string;
+  severity: 'minor' | 'moderate' | 'severe';
+  date: string;
+  reportedBy: string;
+  reporterCallsign: string;
 }
 
 // 征信报告类型
@@ -48,10 +62,18 @@ export interface CreditReport {
     pending: number;
     records: CreditRecord[];
   };
+  violations: {
+    total: number;
+    minor: number;
+    moderate: number;
+    severe: number;
+    records: ViolationRecord[];
+  };
   summary: {
     reliability: number; // 0-100，可靠性评分
     activityLevel: number; // 0-100，活跃度评分
     successRate: number; // 0-100，成功率评分
+    violationImpact: number; // 0-100，违规影响评分
     overallScore: number; // 0-100，综合评分
   };
 }
@@ -110,6 +132,18 @@ const creditApi = {
       details: activity
     }));
     
+    // 获取用户的违规记录
+    const violations = await violationApi.getByUser(callsign);
+    const violationRecords = violations.map(violation => ({
+      ...violation
+    }));
+    
+    // 计算违规统计数据
+    const violationTotal = violations.length;
+    const violationMinor = violations.filter(v => v.severity === 'minor').length;
+    const violationModerate = violations.filter(v => v.severity === 'moderate').length;
+    const violationSevere = violations.filter(v => v.severity === 'severe').length;
+    
     // 计算申请统计数据
     const appTotal = applications.length;
     const appApproved = applications.filter(app => app.status === 'approved').length;
@@ -144,8 +178,12 @@ const creditApi = {
       ? Math.round((successfulEvents / totalCompletedExamsAndActivities) * 100)
       : 50;
     
-    // 综合评分：三个评分的加权平均
-    const overallScore = Math.round((reliability * 0.4) + (activityLevel * 0.3) + (successRate * 0.3));
+    // 违规影响评分：基于违规记录的严重程度
+    // 轻微违规 -5分，中度违规 -15分，严重违规 -30分
+    const violationImpact = Math.max(0, 100 - (violationMinor * 5 + violationModerate * 15 + violationSevere * 30));
+    
+    // 综合评分：四个评分的加权平均
+    const overallScore = Math.round((reliability * 0.3) + (activityLevel * 0.2) + (successRate * 0.2) + (violationImpact * 0.3));
     
     // 构建征信报告
     const report: CreditReport = {
@@ -179,10 +217,18 @@ const creditApi = {
         pending: activityPending,
         records: activityRecords
       },
+      violations: {
+        total: violationTotal,
+        minor: violationMinor,
+        moderate: violationModerate,
+        severe: violationSevere,
+        records: violationRecords
+      },
       summary: {
         reliability,
         activityLevel,
         successRate,
+        violationImpact,
         overallScore
       }
     };

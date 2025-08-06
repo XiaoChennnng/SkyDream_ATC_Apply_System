@@ -206,15 +206,11 @@ const userApi = {
       throw new Error('用户不存在');
     }
     
-    // 删除用户（将状态设置为inactive）
-    const updatedUser = {
-      ...existingUser,
-      status: 'inactive' as const,
-      updatedAt: new Date().toISOString()
-    };
-    
-    // 保存用户
-    await fileSystem.saveUserProfile(callsign, updatedUser);
+    // 真正删除用户
+    const result = await fileSystem.deleteUser(callsign);
+    if (!result) {
+      throw new Error('删除用户失败');
+    }
     
     return true;
   },
@@ -249,8 +245,18 @@ const userApi = {
     
     console.log('用户验证成功');
     
+    // 更新最后登录时间
+    const updatedUser = {
+      ...user,
+      lastLogin: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // 保存更新后的用户信息
+    await fileSystem.saveUserProfile(callsign, updatedUser);
+    
     // 返回用户信息（不包含密码）
-    const { password: _, ...userInfo } = user;
+    const { password: _, ...userInfo } = updatedUser;
     return userInfo;
   },
   

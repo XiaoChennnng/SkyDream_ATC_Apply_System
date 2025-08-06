@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,16 +13,47 @@ import { OverviewTab } from '@/components/credit/overview-tab';
 import { ApplicationsTab } from '@/components/credit/applications-tab';
 import { ExamsTab } from '@/components/credit/exams-tab';
 import { ActivitiesTab } from '@/components/credit/activities-tab';
+import { ViolationsTab } from '@/components/credit/violations-tab';
 import { exportReportToHtml } from '@/components/credit/html-exporter';
 
 export function CreditSystemPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [reports, setReports] = useState<CreditReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<CreditReport | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
 
+  // 解析URL参数
+  const parseUrlParams = useCallback(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const userParam = searchParams.get('user');
+    const tabParam = searchParams.get('tab');
+    
+    return { userParam, tabParam };
+  }, [location.search]);
+  
+  // 更新URL参数
+  const updateUrlParams = useCallback((callsign: string, tab: string) => {
+    navigate(`/credit-system?user=${callsign}&tab=${tab}`, { replace: true });
+  }, [navigate]);
+  
+  // 处理标签页变更
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (selectedReport) {
+      updateUrlParams(selectedReport.user.callsign, value);
+    }
+  };
+  
+  // 处理用户选择
+  const handleUserSelect = (report: CreditReport) => {
+    setSelectedReport(report);
+    updateUrlParams(report.user.callsign, activeTab);
+  };
+  
   // 加载所有征信报告
   useEffect(() => {
     const loadReports = async () => {
@@ -29,6 +61,22 @@ export function CreditSystemPage() {
         setIsLoading(true);
         const allReports = await creditApi.getAllReports();
         setReports(allReports);
+        
+        // 处理URL参数
+        const { userParam, tabParam } = parseUrlParams();
+        
+        // 如果URL中有用户参数，选择对应的用户
+        if (userParam && allReports.length > 0) {
+          const report = allReports.find(r => r.user.callsign === userParam);
+          if (report) {
+            setSelectedReport(report);
+          }
+        }
+        
+        // 如果URL中有标签页参数，切换到对应的标签页
+        if (tabParam) {
+          setActiveTab(tabParam);
+        }
       } catch (error) {
         console.error('加载征信报告失败:', error);
         alert('加载征信报告失败，请重试！');
@@ -38,7 +86,7 @@ export function CreditSystemPage() {
     };
     
     loadReports();
-  }, []);
+  }, [parseUrlParams]);
 
   // 格式化日期
   const formatDate = (dateString: string) => {
@@ -54,9 +102,17 @@ export function CreditSystemPage() {
   };
 
   // 导出HTML
-  const handleExportHtml = () => {
+  const handleExportHtml = async () => {
     if (!selectedReport) return;
-    exportReportToHtml(selectedReport, formatDate);
+    
+    try {
+      // 在导出前重新获取最新的征信报告
+      const latestReport = await creditApi.getUserReport(selectedReport.user.callsign);
+      exportReportToHtml(latestReport, formatDate);
+    } catch (error) {
+      console.error('获取最新征信报告失败:', error);
+      alert('导出失败，请重试！');
+    }
   };
 
   // 获取状态标签样式
@@ -119,7 +175,7 @@ export function CreditSystemPage() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           selectedReport={selectedReport}
-          setSelectedReport={setSelectedReport}
+          setSelectedReport={handleUserSelect}
           isLoading={isLoading}
         />
 
@@ -142,12 +198,13 @@ export function CreditSystemPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid grid-cols-4 mb-6">
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
+                  <TabsList className="grid grid-cols-5 mb-6">
                     <TabsTrigger value="overview">概览</TabsTrigger>
                     <TabsTrigger value="applications">申请记录</TabsTrigger>
                     <TabsTrigger value="exams">考试记录</TabsTrigger>
                     <TabsTrigger value="activities">活动记录</TabsTrigger>
+                    <TabsTrigger value="violations">违规记录</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="overview">
@@ -174,6 +231,15 @@ export function CreditSystemPage() {
                   
                   <TabsContent value="activities">
                     <ActivitiesTab 
+                      report={selectedReport} 
+                      formatDate={formatDate} 
+                      getStatusBadgeClass={getStatusBadgeClass} 
+                      getStatusText={getStatusText} 
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="violations">
+                    <ViolationsTab 
                       report={selectedReport} 
                       formatDate={formatDate} 
                       getStatusBadgeClass={getStatusBadgeClass} 

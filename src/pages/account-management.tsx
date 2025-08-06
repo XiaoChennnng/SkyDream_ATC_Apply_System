@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, CheckCircle, XCircle, User, Shield } from 'lucide-react';
+import { Search, Filter, CheckCircle, XCircle, User, Shield, Trash2, Key } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { userApi } from '@/services/api';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,13 @@ export function AccountManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 对话框状态
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   // 加载用户列表
   useEffect(() => {
@@ -141,6 +149,76 @@ export function AccountManagementPage() {
       toast({
         title: '错误',
         description: '设置用户角色失败',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // 删除用户
+  const deleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      await userApi.delete(selectedUser.callsign);
+      
+      // 更新本地状态
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== selectedUser.id));
+      setFilteredUsers(prevUsers => prevUsers.filter(u => u.id !== selectedUser.id));
+      setSelectedUser(null);
+      
+      // 关闭对话框
+      setDeleteDialogOpen(false);
+      
+      toast({
+        title: '成功',
+        description: '用户已删除',
+      });
+    } catch (error) {
+      console.error('删除用户失败:', error);
+      toast({
+        title: '错误',
+        description: '删除用户失败',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // 修改用户密码
+  const changeUserPassword = async () => {
+    if (!selectedUser) return;
+    
+    // 验证密码
+    if (newPassword.length < 6) {
+      setPasswordError('密码长度至少为6位');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordError('两次输入的密码不一致');
+      return;
+    }
+    
+    try {
+      // 创建一个自定义API方法来直接修改用户密码
+      await userApi.update(selectedUser.callsign, { password: newPassword });
+      
+      // 重置表单
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordError('');
+      
+      // 关闭对话框
+      setPasswordDialogOpen(false);
+      
+      toast({
+        title: '成功',
+        description: '用户密码已修改',
+      });
+    } catch (error) {
+      console.error('修改密码失败:', error);
+      toast({
+        title: '错误',
+        description: '修改密码失败',
         variant: 'destructive',
       });
     }
@@ -307,6 +385,31 @@ export function AccountManagementPage() {
                     )}
                   </div>
                 </div>
+                
+                <div className="border-t pt-4">
+                  <h3 className="font-medium mb-4">账户管理</h3>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => setPasswordDialogOpen(true)}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      修改密码
+                    </Button>
+                    
+                    {selectedUser.role !== 'admin' && (
+                      <Button 
+                        onClick={() => setDeleteDialogOpen(true)}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        删除账户
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -320,6 +423,75 @@ export function AccountManagementPage() {
           )}
         </div>
       </div>
+      
+      {/* 删除用户对话框 */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除用户</DialogTitle>
+            <DialogDescription>
+              您确定要删除用户 {selectedUser?.callsign} 吗？此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>取消</Button>
+            <Button variant="destructive" onClick={deleteUser}>确认删除</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 修改密码对话框 */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>修改用户密码</DialogTitle>
+            <DialogDescription>
+              为用户 {selectedUser?.callsign} 设置新密码。
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {passwordError && (
+              <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
+                {passwordError}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">新密码</Label>
+              <Input 
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="请输入新密码"
+              />
+              <p className="text-sm text-muted-foreground">密码长度至少为6位</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">确认密码</Label>
+              <Input 
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="请再次输入新密码"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setPasswordDialogOpen(false);
+              setNewPassword('');
+              setConfirmPassword('');
+              setPasswordError('');
+            }}>取消</Button>
+            <Button onClick={changeUserPassword}>确认修改</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
