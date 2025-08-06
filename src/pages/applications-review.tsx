@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, FileText, CheckCircle, XCircle, User, Clock } from 'lucide-react';
-import { applicationApi } from '@/services/api';
+import { applicationApi, userApi } from '@/services/api';
 import { useAuth } from '@/contexts/auth-context';
 
 export function ApplicationsReviewPage() {
@@ -47,9 +47,28 @@ export function ApplicationsReviewPage() {
         
         // 预加载申请详情
         const details: Record<string, any> = {};
-        allApplications.forEach((app: any) => {
-          details[app.id] = app;
-        });
+        
+        // 为每个申请获取用户详细信息
+        for (const app of allApplications) {
+          try {
+            const userProfile = await userApi.getByCallsign(app.callsign);
+            if (userProfile) {
+              // 将用户信息添加到申请详情中
+              details[app.id] = {
+                ...app,
+                userEmail: userProfile.email,
+                userQQ: userProfile.qq,
+                userName: userProfile.name
+              };
+            } else {
+              details[app.id] = app;
+            }
+          } catch (error) {
+            console.error(`获取用户信息失败: ${app.callsign}`, error);
+            details[app.id] = app;
+          }
+        }
+        
         setApplicationDetails(details);
       } catch (error) {
         console.error('加载申请列表失败:', error);
@@ -199,7 +218,7 @@ export function ApplicationsReviewPage() {
                       <div className="text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>申请席位</span>
-                          <span>{app.controlRoom}</span>
+                          <span>{app.type}</span>
                         </div>
                         <div className="flex justify-between mt-1">
                           <span>提交时间</span>
@@ -237,7 +256,7 @@ export function ApplicationsReviewPage() {
                       <div className="text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>申请席位</span>
-                          <span>{app.controlRoom}</span>
+                          <span>{app.type}</span>
                         </div>
                         <div className="flex justify-between mt-1">
                           <span>审核时间</span>
@@ -288,7 +307,7 @@ export function ApplicationsReviewPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">申请席位</p>
-                    <p>{applicationDetails[selectedApplication].controlRoom}</p>
+                    <p>{applicationDetails[selectedApplication].type}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">提交时间</p>
@@ -300,15 +319,15 @@ export function ApplicationsReviewPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">是否有管制经验</p>
-                    <p>{applicationDetails[selectedApplication].hasExperience ? '是' : '否'}</p>
+                    <p>{applicationDetails[selectedApplication].experience ? '是' : '否'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">电子邮箱</p>
-                    <p>{applicationDetails[selectedApplication].email}</p>
+                    <p>{applicationDetails[selectedApplication].userEmail || '未提供'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">QQ号码</p>
-                    <p>{applicationDetails[selectedApplication].qq}</p>
+                    <p>{applicationDetails[selectedApplication].userQQ || '未提供'}</p>
                   </div>
                 </div>
 
