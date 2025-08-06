@@ -31,8 +31,6 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{report.user.qq || '未提供'}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}><strong>电话</strong></td>
-              <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{report.user.phone || '未提供'}</td>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}><strong>注册时间</strong></td>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{formatDate(report.user.createdAt)}</td>
             </tr>
@@ -85,11 +83,12 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5px', fontSize: '12px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0a2463', color: 'white' }}>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请类型</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>处理日期</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>处理人</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请类型</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>处理日期</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>处理人</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -107,8 +106,9 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                             : record.details.rejectedAt) 
                         : '-'}
                     </td>
-                    <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
-                  </tr>
+                      <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.comment || '-'}</td>
+                    </tr>
                 ))}
               </tbody>
             </table>
@@ -131,13 +131,14 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5px', fontSize: '12px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0a2463', color: 'white' }}>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>考试类型</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>结果</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>分数</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>考试日期</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>监考人</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>考试类型</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>状态</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>结果</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>分数</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>考试日期</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>监考人</th>
+                    <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,9 +160,10 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                         ? formatDate(record.details.examDate || record.details.preferredDate) 
                         : formatDate(record.details.preferredDate)}
                     </td>
-                    <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
-                  </tr>
-                ))}
+                      <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.comment || '-'}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           )}
@@ -190,6 +192,7 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                   <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>申请日期</th>
                   <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>活动日期</th>
                   <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>负责教员</th>
+                  <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #ddd' }}>教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,6 +215,7 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
                         : formatDate(record.details.preferredDate)}
                     </td>
                     <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.teacherCallsign || '-'}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{record.details.comment || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -415,12 +419,8 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                   <td style="padding: 4px 6px; border: 1px solid #ddd;">${report.user.qq || '未提供'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 4px 6px; border: 1px solid #ddd;"><strong>电话</strong></td>
-                  <td style="padding: 4px 6px; border: 1px solid #ddd;">${report.user.phone || '未提供'}</td>
                   <td style="padding: 4px 6px; border: 1px solid #ddd;"><strong>注册时间</strong></td>
                   <td style="padding: 4px 6px; border: 1px solid #ddd;">${formatDate(report.user.createdAt)}</td>
-                </tr>
-                <tr>
                   <td style="padding: 4px 6px; border: 1px solid #ddd;"><strong>权限</strong></td>
                   <td style="padding: 4px 6px; border: 1px solid #ddd;" colspan="3">${report.user.permissions.join(', ') || '无'}</td>
                 </tr>
@@ -474,6 +474,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">申请日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">处理日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">处理人</th>
+                    <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">教员评价</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -492,6 +493,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                           : '-'}
                       </td>
                       <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.teacherCallsign || '-'}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.comment || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -522,6 +524,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">申请日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">考试日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">监考人</th>
+                    <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">教员评价</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -544,6 +547,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                           : formatDate(record.details.preferredDate)}
                       </td>
                       <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.teacherCallsign || '-'}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.comment || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -574,6 +578,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">申请日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">活动日期</th>
                     <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">负责教员</th>
+                    <th style="padding: 4px 6px; text-align: left; border: 1px solid #ddd;">教员评价</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -596,6 +601,7 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
                           : formatDate(record.details.preferredDate)}
                       </td>
                       <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.teacherCallsign || '-'}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #ddd;">${record.details.comment || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>
