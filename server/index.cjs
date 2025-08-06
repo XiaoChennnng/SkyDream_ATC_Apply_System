@@ -14,7 +14,7 @@ app.use(cors({
   credentials: false
 }));
 
-// 使用更简单的 JSON 解析
+// 使用 Express 内置的 JSON 解析
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -129,21 +129,28 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    message: '服务器运行正常'
   });
 });
 
 // 读取文件
 app.get('/api/fs/read', (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', req.query.path || '');
+    const filePath = req.query.path;
+    if (!filePath) {
+      return res.status(400).json({ error: '文件路径不能为空' });
+    }
     
-    if (!fs.existsSync(filePath)) {
+    const fullPath = path.join(__dirname, '..', filePath);
+    
+    if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: '文件不存在' });
     }
     
-    const data = fs.readFileSync(filePath, 'utf8');
-    res.json(JSON.parse(data));
+    const data = fs.readFileSync(fullPath, 'utf8');
+    const jsonData = JSON.parse(data);
+    res.json(jsonData);
   } catch (error) {
     console.error('读取文件失败:', error);
     res.status(500).json({ error: '读取文件失败', details: error.message });
@@ -165,6 +172,7 @@ app.post('/api/fs/write', (req, res) => {
     ensureDirectoryExists(dirPath);
     
     fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), 'utf8');
+    console.log(`文件写入成功: ${fullPath}`);
     res.json({ success: true });
   } catch (error) {
     console.error('写入文件失败:', error);
@@ -183,17 +191,36 @@ app.delete('/api/fs/delete', (req, res) => {
     const fullPath = path.join(__dirname, '..', queryPath);
     
     if (!fs.existsSync(fullPath)) {
-      return res.status(404).json({ error: '文件或目录不存在' });
+      console.log(`路径不存在，视为删除成功: ${fullPath}`);
+      return res.json({ success: true });
     }
     
     const stats = fs.statSync(fullPath);
     
     if (stats.isDirectory()) {
-      fs.rmSync(fullPath, { recursive: true, force: true });
+      // 使用更强制的删除方式处理目录
+      try {
+        fs.rmSync(fullPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      } catch (rmError) {
+        // 如果rmSync失败，尝试使用rm -rf（Windows下使用rmdir /s /q）
+        console.warn(`rmSync失败，尝试使用系统命令删除: ${rmError.message}`);
+        const { execSync } = require('child_process');
+        try {
+          if (process.platform === 'win32') {
+            execSync(`rmdir /s /q "${fullPath}"`, { stdio: 'ignore' });
+          } else {
+            execSync(`rm -rf "${fullPath}"`, { stdio: 'ignore' });
+          }
+        } catch (execError) {
+          console.error('系统命令删除也失败:', execError);
+          throw rmError; // 抛出原始错误
+        }
+      }
     } else {
       fs.unlinkSync(fullPath);
     }
     
+    console.log(`删除成功: ${fullPath}`);
     res.json({ success: true });
   } catch (error) {
     console.error('删除文件或目录失败:', error);
@@ -211,6 +238,7 @@ app.post('/api/fs/mkdir', (req, res) => {
     
     const fullPath = path.join(__dirname, '..', dirPath);
     ensureDirectoryExists(fullPath);
+    console.log(`目录创建成功: ${fullPath}`);
     res.json({ success: true });
   } catch (error) {
     console.error('创建目录失败:', error);

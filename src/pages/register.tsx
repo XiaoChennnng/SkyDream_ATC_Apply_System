@@ -47,41 +47,18 @@ export function RegisterPage() {
         return;
       }
 
-      // 检查呼号是否已存在
-      let existingUser = null;
-      try {
-        existingUser = await userApi.getByCallsign(formData.callsign);
-      } catch (error) {
-        // 如果是因为用户不存在而导致的错误，可以忽略
-        console.log('检查呼号时出错，可能是新用户');
-      }
-      
-      if (existingUser) {
-        setError('该呼号已被注册');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 检查邮箱是否已存在
-      let allUsers = [];
-      try {
-        allUsers = await userApi.getAll();
-      } catch (error) {
-        console.log('检查邮箱时出错，继续注册流程');
-      }
-      
-      const existingEmail = allUsers.find(user => user.email === formData.email);
-      if (existingEmail) {
-        setError('该邮箱已被注册');
-        setIsSubmitting(false);
-        return;
-      }
+      console.log('开始注册流程，用户数据:', {
+        callsign: formData.callsign,
+        name: formData.name,
+        email: formData.email,
+        qq: formData.qq
+      });
 
       // 创建用户
       try {
-        await userApi.create({
-          callsign: formData.callsign,
-          name: formData.name || formData.callsign, // 如果没有提供姓名，使用呼号作为姓名
+        const newUser = await userApi.create({
+          callsign: formData.callsign.toUpperCase(), // 统一转换为大写
+          name: formData.name || formData.callsign, 
           email: formData.email,
           qq: formData.qq,
           password: formData.password,
@@ -90,36 +67,28 @@ export function RegisterPage() {
           status: 'active'
         });
         
+        console.log('用户创建成功:', newUser);
+        
         // 注册成功，跳转到登录页面
-        alert('注册成功，请登录');
+        alert('注册成功！请使用您的呼号和密码登录。');
         navigate('/login');
-        return; // 成功后直接返回，不执行后续代码
+        
       } catch (error: any) {
-        // 检查是否是因为用户已存在的错误
-        if (error.message && error.message.includes('呼号已存在')) {
-          // 用户已经成功创建，但返回了错误
-          alert('注册成功，请登录');
-          navigate('/login');
-          return; // 成功后直接返回，不执行后续代码
-        } else {
-          console.error('注册失败:', error);
-          
-          // 尝试检查用户是否已经创建成功
-          try {
-            const newUser = await userApi.getByCallsign(formData.callsign);
-            if (newUser) {
-              // 用户已经创建成功，但后续操作出错
-              alert('注册成功，请登录');
-              navigate('/login');
-              return;
-            }
-          } catch (checkError) {
-            console.log('检查用户是否创建成功时出错', checkError);
+        console.error('注册失败，详细错误:', error);
+        
+        // 处理不同类型的错误
+        if (error.message) {
+          if (error.message.includes('呼号已存在')) {
+            setError('该呼号已被注册，请使用其他呼号');
+          } else if (error.message.includes('邮箱')) {
+            setError('该邮箱已被注册，请使用其他邮箱');
+          } else {
+            setError(`注册失败: ${error.message}`);
           }
-          
-          setError('注册过程中发生错误，请稍后再试');
-          setIsSubmitting(false);
-          return; // 出错后直接返回，不执行后续代码
+        } else if (error.response?.data?.error) {
+          setError(`注册失败: ${error.response.data.error}`);
+        } else {
+          setError('注册过程中发生网络错误，请检查网络连接后重试');
         }
       }
     } catch (err) {

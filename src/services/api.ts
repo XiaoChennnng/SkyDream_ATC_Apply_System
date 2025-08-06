@@ -128,12 +128,24 @@ const userApi = {
   
   // 创建用户
   create: async (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('开始创建用户:', userData);
     await ensureStorageInitialized();
     
     // 检查呼号是否已存在
-    const existingUser = await userApi.getByCallsign(userData.callsign);
-    if (existingUser) {
-      throw new Error('呼号已存在');
+    try {
+      const existingUser = await userApi.getByCallsign(userData.callsign);
+      if (existingUser) {
+        console.log('呼号已存在:', userData.callsign);
+        throw new Error('呼号已存在');
+      }
+    } catch (error: unknown) {
+      // 如果是因为用户不存在导致的错误，继续创建流程
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('呼号已存在')) {
+        console.log('检查用户是否存在时出错，继续创建流程:', error);
+      } else {
+        throw error;
+      }
     }
     
     // 创建新用户
@@ -144,10 +156,26 @@ const userApi = {
       updatedAt: new Date().toISOString()
     };
     
-    // 保存用户
-    await fileSystem.saveUserProfile(userData.callsign, newUser);
+    console.log('准备保存新用户:', newUser);
     
-    return newUser;
+    try {
+      // 保存用户
+      await fileSystem.saveUserProfile(userData.callsign, newUser);
+      console.log('用户保存成功:', userData.callsign);
+      
+      // 验证用户是否真的保存成功
+      const savedUser = await fileSystem.getUserProfile(userData.callsign);
+      if (!savedUser) {
+        throw new Error('用户保存失败，无法读取保存的用户数据');
+      }
+      
+      console.log('用户创建并验证成功:', savedUser);
+      return newUser;
+    } catch (error: unknown) {
+      console.error('保存用户时出错:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`用户创建失败: ${errorMessage}`);
+    }
   },
   
   // 更新用户

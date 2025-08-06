@@ -30,11 +30,12 @@ interface Attachment {
 // 文件系统基础路径
 const BASE_PATH = './data';
 
-// API服务器地址
-// 根据环境自动选择API地址
-const API_BASE_URL = import.meta.env.PROD 
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001';
+// API服务器地址 - 服务器环境配置
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:3001`;
+
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('当前域名:', window.location.hostname);
+console.log('当前协议:', window.location.protocol);
 
 // 创建API请求函数
 const api = {
@@ -50,10 +51,36 @@ const api = {
   
   async writeFile(path: string, data: any): Promise<boolean> {
     try {
-      await axios.post(`${API_BASE_URL}/api/fs/write`, { path, data });
-      return true;
-    } catch (error) {
+      console.log(`尝试写入文件: ${path}`);
+      console.log(`API地址: ${API_BASE_URL}`);
+      console.log(`请求数据:`, { path, data });
+      
+      const response = await axios.post(`${API_BASE_URL}/api/fs/write`, { path, data });
+      console.log(`文件写入响应:`, response.data);
+      console.log(`响应状态:`, response.status);
+      
+      if (response.data && response.data.success) {
+        console.log(`文件写入成功: ${path}`);
+        return true;
+      } else {
+        console.error(`文件写入失败，服务器响应:`, response.data);
+        return false;
+      }
+    } catch (error: any) {
       console.error(`写入文件失败: ${path}`, error);
+      console.error(`错误类型:`, error.name);
+      console.error(`错误消息:`, error.message);
+      
+      if (error.response) {
+        console.error('服务器错误响应:', error.response.data);
+        console.error('状态码:', error.response.status);
+        console.error('响应头:', error.response.headers);
+      } else if (error.request) {
+        console.error('网络请求失败 - 无响应');
+        console.error('请求详情:', error.request);
+      } else {
+        console.error('请求配置错误:', error.message);
+      }
       return false;
     }
   },
@@ -156,18 +183,54 @@ const getUserFolder = async (callsign: string): Promise<UserFolder> => {
 
 // 保存用户个人资料
 const saveUserProfile = async (callsign: string, profile: any) => {
-  const fs = await initFileSystem();
+  console.log(`开始保存用户资料: ${callsign}`);
   
-  if (!fs.users[callsign]) {
+  try {
+    // 确保用户文件夹存在
     await createUserFolder(callsign);
+    
+    // 保存用户个人资料到文件
+    const saveResult = await api.writeFile(`${BASE_PATH}/users/${callsign}/profile.json`, profile);
+    if (!saveResult) {
+      throw new Error('文件写入失败');
+    }
+    
+    // 重新获取最新的文件系统索引
+    const fs = await initFileSystem();
+    
+    // 确保用户条目存在
+    if (!fs.users[callsign]) {
+      fs.users[callsign] = {
+        profile: null,
+        applications: {},
+        exams: {},
+        activities: {},
+        attachments: {}
+      };
+    }
+    
+    // 更新文件系统索引
+    fs.users[callsign].profile = profile;
+    await saveFileSystemIndex(fs);
+    
+    console.log(`用户资料保存完成: ${callsign}`);
+    
+    // 验证保存是否成功 - 等待一小段时间确保文件写入完成
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 尝试读取刚保存的文件
+    const savedProfile = await api.readFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+    if (!savedProfile) {
+      throw new Error('保存后无法读取用户文件，可能是文件系统权限问题');
+    }
+    
+    console.log(`用户资料验证成功: ${callsign}`, savedProfile);
+    return true;
+    
+  } catch (error) {
+    console.error(`保存用户资料失败: ${callsign}`, error);
+    throw error;
   }
-  
-  // 保存用户个人资料到文件
-  await api.writeFile(`${BASE_PATH}/users/${callsign}/profile.json`, profile);
-  
-  // 更新文件系统索引
-  fs.users[callsign].profile = profile;
-  await saveFileSystemIndex(fs);
 };
 
 // 保存用户
@@ -244,7 +307,10 @@ const saveUserAttachment = async (callsign: string, attachmentId: string, attach
 // 获取用户个人资料
 const getUserProfile = async (callsign: string) => {
   try {
-    return await api.readFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+    console.log(`尝试读取用户资料: ${callsign}`);
+    const profile = await api.readFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+    console.log(`用户资料读取结果: ${callsign}`, profile ? '成功' : '失败');
+    return profile;
   } catch (error) {
     console.error(`获取用户个人资料失败: ${callsign}`, error);
     return null;
@@ -364,48 +430,33 @@ const deleteUserAttachment = async (callsign: string, attachmentId: string) => {
   }
 };
 
-// 删除用户
+// 删除用户 - 真正删除
 const deleteUser = async (callsign: string) => {
   try {
-    // 删除用户目录下的所有文件
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+    console.log(`开始真正删除用户: ${callsign}`);
     
-    // 删除用户的申请、考试、活动和附件目录
-    const applicationFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/applications`);
-    for (const file of applicationFiles) {
-      await api.deleteFile(`${BASE_PATH}/users/${callsign}/applications/${file}`);
+    // 删除用户整个目录（包括所有子目录和文件）
+    const userDirPath = `${BASE_PATH}/users/${callsign}`;
+    console.log(`删除用户目录: ${userDirPath}`);
+    
+    const deleteResult = await api.deleteFile(userDirPath);
+    
+    if (!deleteResult) {
+      console.error(`删除用户目录失败: ${callsign}`);
+      return false;
     }
     
-    const examFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/exams`);
-    for (const file of examFiles) {
-      await api.deleteFile(`${BASE_PATH}/users/${callsign}/exams/${file}`);
-    }
+    console.log(`用户目录删除成功: ${callsign}`);
     
-    const activityFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/activities`);
-    for (const file of activityFiles) {
-      await api.deleteFile(`${BASE_PATH}/users/${callsign}/activities/${file}`);
-    }
-    
-    const attachmentFiles = await api.listFiles(`${BASE_PATH}/users/${callsign}/attachments`);
-    for (const file of attachmentFiles) {
-      await api.deleteFile(`${BASE_PATH}/users/${callsign}/attachments/${file}`);
-    }
-    
-    // 删除用户目录
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}/applications`);
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}/exams`);
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}/activities`);
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}/attachments`);
-    await api.deleteFile(`${BASE_PATH}/users/${callsign}`);
-    
-    // 更新文件系统索引
+    // 然后更新文件系统索引，从索引中移除用户
     const fs = await initFileSystem();
     if (fs.users[callsign]) {
       delete fs.users[callsign];
       await saveFileSystemIndex(fs);
+      console.log(`已从索引中移除用户: ${callsign}`);
     }
     
-    console.log(`用户 ${callsign} 已被删除`);
+    console.log(`用户 ${callsign} 已被完全删除`);
     return true;
   } catch (error) {
     console.error(`删除用户失败: ${callsign}`, error);
