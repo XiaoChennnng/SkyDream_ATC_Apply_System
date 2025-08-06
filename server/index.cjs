@@ -2,15 +2,27 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 中间件
-app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+// 基本中间件配置
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: false
+}));
+
+// 使用更简单的 JSON 解析
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 请求日志
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // 确保目录存在
 const ensureDirectoryExists = (dirPath) => {
@@ -57,7 +69,7 @@ const initAdminAccount = () => {
       callsign: 'ADMIN',
       name: '系统管理员',
       email: 'admin@skydream.com',
-      password: 'admin123', // 默认密码
+      password: 'admin123',
       role: 'admin',
       status: 'active',
       permissions: ['all'],
@@ -112,12 +124,19 @@ const initAdminAccount = () => {
 // 初始化管理员账号
 initAdminAccount();
 
-// API路由
+// 健康检查端点
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // 读取文件
 app.get('/api/fs/read', (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', req.query.path);
+    const filePath = path.join(__dirname, '..', req.query.path || '');
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: '文件不存在' });
@@ -135,6 +154,10 @@ app.get('/api/fs/read', (req, res) => {
 app.post('/api/fs/write', (req, res) => {
   try {
     const { path: filePath, data } = req.body;
+    if (!filePath) {
+      return res.status(400).json({ error: '文件路径不能为空' });
+    }
+    
     const fullPath = path.join(__dirname, '..', filePath);
     
     // 确保目录存在
@@ -152,7 +175,12 @@ app.post('/api/fs/write', (req, res) => {
 // 删除文件或目录
 app.delete('/api/fs/delete', (req, res) => {
   try {
-    const fullPath = path.join(__dirname, '..', req.query.path);
+    const queryPath = req.query.path;
+    if (!queryPath) {
+      return res.status(400).json({ error: '文件路径不能为空' });
+    }
+    
+    const fullPath = path.join(__dirname, '..', queryPath);
     
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: '文件或目录不存在' });
@@ -161,10 +189,8 @@ app.delete('/api/fs/delete', (req, res) => {
     const stats = fs.statSync(fullPath);
     
     if (stats.isDirectory()) {
-      // 递归删除目录
-      fs.rmdirSync(fullPath, { recursive: true });
+      fs.rmSync(fullPath, { recursive: true, force: true });
     } else {
-      // 删除文件
       fs.unlinkSync(fullPath);
     }
     
@@ -179,8 +205,11 @@ app.delete('/api/fs/delete', (req, res) => {
 app.post('/api/fs/mkdir', (req, res) => {
   try {
     const { path: dirPath } = req.body;
-    const fullPath = path.join(__dirname, '..', dirPath);
+    if (!dirPath) {
+      return res.status(400).json({ error: '目录路径不能为空' });
+    }
     
+    const fullPath = path.join(__dirname, '..', dirPath);
     ensureDirectoryExists(fullPath);
     res.json({ success: true });
   } catch (error) {
@@ -192,7 +221,8 @@ app.post('/api/fs/mkdir', (req, res) => {
 // 列出文件
 app.get('/api/fs/list', (req, res) => {
   try {
-    const fullPath = path.join(__dirname, '..', req.query.path);
+    const queryPath = req.query.path || '';
+    const fullPath = path.join(__dirname, '..', queryPath);
     
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: '目录不存在' });
@@ -206,9 +236,36 @@ app.get('/api/fs/list', (req, res) => {
   }
 });
 
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('服务器错误:', err);
+  res.status(500).json({ 
+    error: '服务器内部错误', 
+    details: err.message
+  });
+});
+
 // 启动服务器
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`服务器运行在 http://0.0.0.0:${PORT}`);
   console.log(`本地访问: http://localhost:${PORT}`);
   console.log(`公网访问: http://你的公网IP:${PORT}`);
+  console.log('服务器启动成功！');
+});
+
+// 优雅关闭
+process.on('SIGTERM', () => {
+  console.log('收到 SIGTERM 信号，正在关闭服务器...');
+  server.close(() => {
+    console.log('服务器已关闭');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('收到 SIGINT 信号，正在关闭服务器...');
+  server.close(() => {
+    console.log('服务器已关闭');
+    process.exit(0);
+  });
 });

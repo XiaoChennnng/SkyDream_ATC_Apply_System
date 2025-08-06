@@ -31,7 +31,10 @@ interface Attachment {
 const BASE_PATH = './data';
 
 // API服务器地址
-const API_BASE_URL = 'http://localhost:3001';
+// 根据环境自动选择API地址
+const API_BASE_URL = import.meta.env.PROD 
+  ? `${window.location.protocol}//${window.location.hostname}:3001`
+  : 'http://localhost:3001';
 
 // 创建API请求函数
 const api = {
