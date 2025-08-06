@@ -52,7 +52,7 @@ export function ActivityPage() {
     setIsSubmitting(true);
     
     try {
-      // 按照API要求的格式传递参数
+      // 按照API要求格式传递参数
       await activityApi.create(user.callsign, {
         controlRoom: formData.controlRoom,
         activityCallsign: formData.activityCallsign,
