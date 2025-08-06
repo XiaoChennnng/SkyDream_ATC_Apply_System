@@ -39,7 +39,7 @@ export function UserList({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
         {isLoading ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">加载中...</p>

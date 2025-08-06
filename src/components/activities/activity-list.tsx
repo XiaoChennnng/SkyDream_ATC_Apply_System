@@ -22,7 +22,7 @@ export function ActivityList({ activities, activeTab, selectedActivity, onSelect
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
       {activities.map(activity => (
         <Card 
           key={activity.id} 

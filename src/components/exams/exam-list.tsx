@@ -23,7 +23,7 @@ export function ExamList({ exams, activeTab, selectedExam, onSelectExam }: ExamL
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
       {exams.map(exam => (
         <Card 
           key={exam.id} 

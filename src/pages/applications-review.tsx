@@ -177,7 +177,7 @@ export function ApplicationsReviewPage() {
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
             {activeTab === 'pending' ? (
               filteredApplications.pending.length > 0 ? (
                 filteredApplications.pending.map(app => (
