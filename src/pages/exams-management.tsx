@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Clock } from 'lucide-react';
-import { examApi } from '@/services/api';
+import { examApi, userApi } from '@/services/api';
 import { useAuth } from '@/contexts/auth-context';
 import { ExamList } from '@/components/exams/exam-list';
 import { ExamDetail } from '@/components/exams/exam-detail';
@@ -44,16 +44,28 @@ export function ExamsManagementPage() {
     const loadExams = async () => {
       try {
         const allExams = await examApi.getAll();
+        const allUsers = await userApi.getAll();
         
-        const pending = allExams.filter((exam: any) => 
+        // 为每个考试添加用户信息
+        const examsWithUserInfo = allExams.map((exam: any) => {
+          const user = allUsers.find((u: any) => u.id === exam.userId);
+          return {
+            ...exam,
+            email: user?.email || '',
+            qq: user?.qq || '',
+            name: user?.name || ''
+          };
+        });
+        
+        const pending = examsWithUserInfo.filter((exam: any) => 
           exam.status === 'pending' || !exam.status
         );
         
-        const confirmed = allExams.filter((exam: any) => 
+        const confirmed = examsWithUserInfo.filter((exam: any) => 
           exam.status === 'confirmed'
         );
         
-        const completed = allExams.filter((exam: any) => 
+        const completed = examsWithUserInfo.filter((exam: any) => 
           exam.status === 'completed'
         );
         
@@ -65,7 +77,7 @@ export function ExamsManagementPage() {
         
         // 预加载考试详情
         const details: Record<string, any> = {};
-        allExams.forEach((exam: any) => {
+        examsWithUserInfo.forEach((exam: any) => {
           details[exam.id] = exam;
         });
         setExamDetails(details);

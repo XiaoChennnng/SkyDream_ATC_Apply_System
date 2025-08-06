@@ -28,6 +28,7 @@ export function ApplicationsTab({ report, formatDate, getStatusBadgeClass, getSt
                   <th className="px-4 py-3">申请日期</th>
                   <th className="px-4 py-3">处理日期</th>
                   <th className="px-4 py-3">处理人</th>
+                  <th className="px-4 py-3">教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -48,6 +49,7 @@ export function ApplicationsTab({ report, formatDate, getStatusBadgeClass, getSt
                         : '-'}
                     </td>
                     <td className="px-4 py-3">{record.details.teacherCallsign || '-'}</td>
+                    <td className="px-4 py-3">{record.details.teacherComment || '-'}</td>
                   </tr>
                 ))}
               </tbody>

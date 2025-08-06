@@ -30,6 +30,7 @@ export function ActivitiesTab({ report, formatDate, getStatusBadgeClass, getStat
                   <th className="px-4 py-3">申请日期</th>
                   <th className="px-4 py-3">活动日期</th>
                   <th className="px-4 py-3">负责教员</th>
+                  <th className="px-4 py-3">教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -62,6 +63,7 @@ export function ActivitiesTab({ report, formatDate, getStatusBadgeClass, getStat
                         : formatDate(record.details.preferredDate)}
                     </td>
                     <td className="px-4 py-3">{record.details.teacherCallsign || '-'}</td>
+                    <td className="px-4 py-3">{record.details.comment || '-'}</td>
                   </tr>
                 ))}
               </tbody>

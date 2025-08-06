@@ -30,6 +30,7 @@ export function ExamsTab({ report, formatDate, getStatusBadgeClass, getStatusTex
                   <th className="px-4 py-3">申请日期</th>
                   <th className="px-4 py-3">考试日期</th>
                   <th className="px-4 py-3">监考人</th>
+                  <th className="px-4 py-3">教员评价</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,6 +59,7 @@ export function ExamsTab({ report, formatDate, getStatusBadgeClass, getStatusTex
                         : formatDate(record.details.preferredDate)}
                     </td>
                     <td className="px-4 py-3">{record.details.teacherCallsign || '-'}</td>
+                    <td className="px-4 py-3">{record.details.comment || '-'}</td>
                   </tr>
                 ))}
               </tbody>
