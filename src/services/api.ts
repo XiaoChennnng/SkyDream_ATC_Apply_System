@@ -249,38 +249,6 @@ const userApi = {
     
     console.log(`尝试验证用户: ${callsign}`);
     
-    // 特殊处理管理员账户 - 不区分大小写
-    if (callsign.toUpperCase() === 'ADMIN') {
-      console.log('检测到管理员登录尝试，使用特殊处理');
-      
-      // 尝试重新初始化管理员账户
-      try {
-        await accountManager.initializeSystem();
-        console.log('系统已重新初始化');
-        
-        // 如果是管理员账户，直接验证密码
-        if (password === 'admin123') {
-          console.log('管理员密码验证成功');
-          
-          // 返回管理员用户信息
-          return {
-            id: 'admin-id',
-            callsign: 'ADMIN',
-            name: '系统管理员',
-            email: 'admin@skydream.com',
-            role: 'admin',
-            permissions: ['all'],
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
-          };
-        }
-      } catch (error) {
-        console.error('重新初始化系统失败:', error);
-      }
-    }
-    
     // 获取用户
     const user = await userApi.getByCallsign(callsign);
     

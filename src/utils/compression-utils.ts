@@ -44,6 +44,7 @@ export function decompressData<T = any>(compressedData: string): T {
 /**
  * 简单的RLE压缩算法
  * 对连续重复的字符进行压缩
+ * 使用更安全的压缩标记来避免与用户数据冲突
  * @param input 输入字符串
  * @returns 压缩后的字符串
  */
@@ -51,6 +52,9 @@ function simpleRLECompress(input: string): string {
   if (!input || input.length <= 3) {
     return input;
   }
+  
+  // 使用更安全的压缩标记，避免与常见字符冲突
+  const COMPRESS_MARKER = '\u0001'; // 使用控制字符作为压缩标记
   
   let result = '';
   let count = 1;
@@ -62,7 +66,7 @@ function simpleRLECompress(input: string): string {
     } else {
       // 只有当重复次数大于3时才进行压缩
       if (count >= 4) {
-        result += `#${count}${current}`;
+        result += `${COMPRESS_MARKER}${count}${current}`;
       } else {
         result += current.repeat(count);
       }
@@ -73,7 +77,7 @@ function simpleRLECompress(input: string): string {
   
   // 处理最后一组字符
   if (count >= 4) {
-    result += `#${count}${current}`;
+    result += `${COMPRESS_MARKER}${count}${current}`;
   } else {
     result += current.repeat(count);
   }
@@ -93,11 +97,13 @@ function simpleRLEDecompress(input: string): string {
     return input;
   }
   
+  const COMPRESS_MARKER = '\u0001'; // 与压缩时使用相同的标记
+  
   let result = '';
   let i = 0;
   
   while (i < input.length) {
-    if (input[i] === '#' && i + 2 < input.length) {
+    if (input[i] === COMPRESS_MARKER && i + 2 < input.length) {
       // 找到压缩标记
       let countStr = '';
       i++;
