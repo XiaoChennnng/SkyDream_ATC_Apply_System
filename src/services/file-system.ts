@@ -189,8 +189,11 @@ const saveUserProfile = async (callsign: string, profile: any) => {
     // 确保用户文件夹存在
     await createUserFolder(callsign);
     
+    // 压缩数据以减少存储空间和传输时间
+    const compressedData = compressData(profile);
+    
     // 保存用户个人资料到文件
-    const saveResult = await api.writeFile(`${BASE_PATH}/users/${callsign}/profile.json`, profile);
+    const saveResult = await api.writeFile(`${BASE_PATH}/users/${callsign}/profile.json`, compressedData);
     if (!saveResult) {
       throw new Error('文件写入失败');
     }
@@ -224,6 +227,10 @@ const saveUserProfile = async (callsign: string, profile: any) => {
       throw new Error('保存后无法读取用户文件，可能是文件系统权限问题');
     }
     
+    // 清除相关缓存
+    cacheService.delete(`user_profile_${callsign}`);
+    cacheService.delete('all_users');
+    
     console.log(`用户资料验证成功: ${callsign}`, savedProfile);
     return true;
     
@@ -254,6 +261,10 @@ const saveUserApplication = async (callsign: string, applicationId: string, appl
   // 更新文件系统索引
   fs.users[callsign].applications[applicationId] = application;
   await saveFileSystemIndex(fs);
+  
+  // 清除相关缓存
+  cacheService.delete(`user_applications_${callsign}`);
+  cacheService.delete('all_applications');
 };
 
 // 保存用户考试
@@ -270,6 +281,10 @@ const saveUserExam = async (callsign: string, examId: string, exam: any) => {
   // 更新文件系统索引
   fs.users[callsign].exams[examId] = exam;
   await saveFileSystemIndex(fs);
+  
+  // 清除相关缓存
+  cacheService.delete(`user_exams_${callsign}`);
+  cacheService.delete('all_exams');
 };
 
 // 保存用户活动
@@ -286,6 +301,10 @@ const saveUserActivity = async (callsign: string, activityId: string, activity: 
   // 更新文件系统索引
   fs.users[callsign].activities[activityId] = activity;
   await saveFileSystemIndex(fs);
+  
+  // 清除相关缓存
+  cacheService.delete(`user_activities_${callsign}`);
+  cacheService.delete('all_activities');
 };
 
 // 保存用户附件
@@ -304,13 +323,44 @@ const saveUserAttachment = async (callsign: string, attachmentId: string, attach
   await saveFileSystemIndex(fs);
 };
 
+// 导入缓存服务和工具函数
+import { cacheService } from './cache-service';
+import { createIndex, findByIndex, createMultiIndex } from '@/utils/index-utils';
+import { compressData, decompressData } from '@/utils/compression-utils';
+import { paginateData } from '@/utils/pagination-utils';
+
 // 获取用户个人资料
 const getUserProfile = async (callsign: string) => {
   try {
-    console.log(`尝试读取用户资料: ${callsign}`);
-    const profile = await api.readFile(`${BASE_PATH}/users/${callsign}/profile.json`);
-    console.log(`用户资料读取结果: ${callsign}`, profile ? '成功' : '失败');
-    return profile;
+    // 使用缓存服务获取用户资料
+    const cacheKey = `user_profile_${callsign}`;
+    return await cacheService.getOrSet(cacheKey, async () => {
+      console.log(`尝试读取用户资料: ${callsign}`);
+      const compressedProfile = await api.readFile(`${BASE_PATH}/users/${callsign}/profile.json`);
+      
+      if (!compressedProfile) {
+        console.log(`用户资料读取结果: ${callsign} 失败`);
+        return null;
+      }
+      
+      // 尝试解压缩数据
+      try {
+        // 检查数据是否是压缩格式
+        if (typeof compressedProfile === 'string' && compressedProfile.includes('#')) {
+          const profile = decompressData(compressedProfile);
+          console.log(`用户资料读取结果: ${callsign} 成功 (已解压缩)`);
+          return profile;
+        } else {
+          // 如果不是压缩格式，直接返回
+          console.log(`用户资料读取结果: ${callsign} 成功 (未压缩)`);
+          return compressedProfile;
+        }
+      } catch (decompressError) {
+        console.error(`解压缩用户资料失败: ${callsign}`, decompressError);
+        // 如果解压缩失败，返回原始数据
+        return compressedProfile;
+      }
+    }, 5 * 60 * 1000); // 缓存5分钟
   } catch (error) {
     console.error(`获取用户个人资料失败: ${callsign}`, error);
     return null;
@@ -320,18 +370,33 @@ const getUserProfile = async (callsign: string) => {
 // 获取用户所有申请
 const getUserApplications = async (callsign: string) => {
   try {
-    const applications: Record<string, any> = {};
-    const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/applications`);
-    
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const applicationId = file.replace('.json', '');
-        const application = await api.readFile(`${BASE_PATH}/users/${callsign}/applications/${file}`);
-        applications[applicationId] = application;
-      }
-    }
-    
-    return applications;
+    // 使用缓存服务获取用户申请
+    const cacheKey = `user_applications_${callsign}`;
+    return await cacheService.getOrSet(cacheKey, async () => {
+      const applications: Record<string, any> = {};
+      const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/applications`);
+      
+      // 使用Promise.all并行处理所有文件读取
+      const readPromises = files
+        .filter(file => file.endsWith('.json'))
+        .map(async (file) => {
+          const applicationId = file.replace('.json', '');
+          const application = await api.readFile(`${BASE_PATH}/users/${callsign}/applications/${file}`);
+          return { applicationId, application };
+        });
+      
+      // 等待所有读取操作完成
+      const results = await Promise.all(readPromises);
+      
+      // 将结果整合到applications对象中
+      results.forEach(({ applicationId, application }) => {
+        if (application) {
+          applications[applicationId] = application;
+        }
+      });
+      
+      return applications;
+    }, 3 * 60 * 1000); // 缓存3分钟
   } catch (error) {
     console.error(`获取用户申请失败: ${callsign}`, error);
     return {};
@@ -341,18 +406,33 @@ const getUserApplications = async (callsign: string) => {
 // 获取用户所有考试
 const getUserExams = async (callsign: string) => {
   try {
-    const exams: Record<string, any> = {};
-    const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/exams`);
-    
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const examId = file.replace('.json', '');
-        const exam = await api.readFile(`${BASE_PATH}/users/${callsign}/exams/${file}`);
-        exams[examId] = exam;
-      }
-    }
-    
-    return exams;
+    // 使用缓存服务获取用户考试
+    const cacheKey = `user_exams_${callsign}`;
+    return await cacheService.getOrSet(cacheKey, async () => {
+      const exams: Record<string, any> = {};
+      const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/exams`);
+      
+      // 使用Promise.all并行处理所有文件读取
+      const readPromises = files
+        .filter(file => file.endsWith('.json'))
+        .map(async (file) => {
+          const examId = file.replace('.json', '');
+          const exam = await api.readFile(`${BASE_PATH}/users/${callsign}/exams/${file}`);
+          return { examId, exam };
+        });
+      
+      // 等待所有读取操作完成
+      const results = await Promise.all(readPromises);
+      
+      // 将结果整合到exams对象中
+      results.forEach(({ examId, exam }) => {
+        if (exam) {
+          exams[examId] = exam;
+        }
+      });
+      
+      return exams;
+    }, 3 * 60 * 1000); // 缓存3分钟
   } catch (error) {
     console.error(`获取用户考试失败: ${callsign}`, error);
     return {};
@@ -362,18 +442,33 @@ const getUserExams = async (callsign: string) => {
 // 获取用户所有活动
 const getUserActivities = async (callsign: string) => {
   try {
-    const activities: Record<string, any> = {};
-    const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/activities`);
-    
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const activityId = file.replace('.json', '');
-        const activity = await api.readFile(`${BASE_PATH}/users/${callsign}/activities/${file}`);
-        activities[activityId] = activity;
-      }
-    }
-    
-    return activities;
+    // 使用缓存服务获取用户活动
+    const cacheKey = `user_activities_${callsign}`;
+    return await cacheService.getOrSet(cacheKey, async () => {
+      const activities: Record<string, any> = {};
+      const files = await api.listFiles(`${BASE_PATH}/users/${callsign}/activities`);
+      
+      // 使用Promise.all并行处理所有文件读取
+      const readPromises = files
+        .filter(file => file.endsWith('.json'))
+        .map(async (file) => {
+          const activityId = file.replace('.json', '');
+          const activity = await api.readFile(`${BASE_PATH}/users/${callsign}/activities/${file}`);
+          return { activityId, activity };
+        });
+      
+      // 等待所有读取操作完成
+      const results = await Promise.all(readPromises);
+      
+      // 将结果整合到activities对象中
+      results.forEach(({ activityId, activity }) => {
+        if (activity) {
+          activities[activityId] = activity;
+        }
+      });
+      
+      return activities;
+    }, 3 * 60 * 1000); // 缓存3分钟
   } catch (error) {
     console.error(`获取用户活动失败: ${callsign}`, error);
     return {};
@@ -464,92 +559,212 @@ const deleteUser = async (callsign: string) => {
   }
 };
 
-// 获取所有用户
-const getAllUsers = async () => {
+// 用户数据索引
+let userIndex: Record<string, any> = {};
+let applicationIndex: Record<string, any[]> = {};
+let examIndex: Record<string, any[]> = {};
+let activityIndex: Record<string, any[]> = {};
+
+// 初始化索引
+const initIndices = async () => {
+  try {
+    console.log('初始化数据索引...');
+    const users = await getAllUsersRaw();
+    userIndex = createIndex(users, user => user.callsign);
+    
+    const applications = await getAllApplicationsRaw();
+    applicationIndex = createMultiIndex(applications, app => app.callsign);
+    
+    const exams = await getAllExamsRaw();
+    examIndex = createMultiIndex(exams, exam => exam.callsign);
+    
+    const activities = await getAllActivitiesRaw();
+    activityIndex = createMultiIndex(activities, activity => activity.callsign);
+    
+    console.log('数据索引初始化完成');
+  } catch (error) {
+    console.error('初始化索引失败:', error);
+  }
+};
+
+// 获取所有用户（原始方法，不使用索引）
+const getAllUsersRaw = async () => {
   try {
     const fs = await initFileSystem();
     const users: any[] = [];
     
-    for (const callsign of Object.keys(fs.users)) {
+    // 使用Promise.all并行获取所有用户资料
+    const userPromises = Object.keys(fs.users).map(async (callsign) => {
       const profile = await getUserProfile(callsign);
-      if (profile) {
-        users.push(profile);
-      }
-    }
+      return profile;
+    });
     
-    return users;
+    // 等待所有获取操作完成
+    const profiles = await Promise.all(userPromises);
+    
+    // 过滤掉null值并返回结果
+    return profiles.filter(profile => profile !== null);
   } catch (error) {
     console.error('获取所有用户失败', error);
     return [];
   }
 };
 
-// 获取所有申请
-const getAllApplications = async () => {
+// 获取所有用户（使用索引和缓存）
+const getAllUsers = async () => {
+  try {
+    // 使用缓存服务获取所有用户
+    const cacheKey = 'all_users';
+    return await cacheService.getOrSet(cacheKey, async () => {
+      // 如果索引为空，初始化索引
+      if (Object.keys(userIndex).length === 0) {
+        await initIndices();
+      }
+      
+      // 从索引中获取所有用户
+      return Object.values(userIndex);
+    }, 2 * 60 * 1000); // 缓存2分钟
+  } catch (error) {
+    console.error('获取所有用户失败', error);
+    return [];
+  }
+};
+
+// 获取所有申请（原始方法，不使用索引）
+const getAllApplicationsRaw = async () => {
   try {
     const fs = await initFileSystem();
-    const applications: any[] = [];
     
-    for (const callsign of Object.keys(fs.users)) {
+    // 使用Promise.all并行获取所有用户的申请
+    const appPromises = Object.keys(fs.users).map(async (callsign) => {
       const userApps = await getUserApplications(callsign);
       
-      for (const appId of Object.keys(userApps)) {
-        applications.push({
-          ...userApps[appId],
-          callsign
-        });
-      }
-    }
+      // 将用户的申请转换为数组，并添加callsign字段
+      return Object.keys(userApps).map(appId => ({
+        ...userApps[appId],
+        callsign
+      }));
+    });
     
-    return applications;
+    // 等待所有获取操作完成
+    const appArrays = await Promise.all(appPromises);
+    
+    // 将二维数组扁平化为一维数组
+    return appArrays.flat();
   } catch (error) {
     console.error('获取所有申请失败', error);
     return [];
   }
 };
 
-// 获取所有考试
-const getAllExams = async () => {
+// 获取所有申请（使用索引和缓存）
+const getAllApplications = async () => {
+  try {
+    // 使用缓存服务获取所有申请
+    const cacheKey = 'all_applications';
+    return await cacheService.getOrSet(cacheKey, async () => {
+      // 如果索引为空，初始化索引
+      if (Object.keys(applicationIndex).length === 0) {
+        await initIndices();
+      }
+      
+      // 从索引中获取所有申请并扁平化
+      return Object.values(applicationIndex).flat();
+    }, 2 * 60 * 1000); // 缓存2分钟
+  } catch (error) {
+    console.error('获取所有申请失败', error);
+    return [];
+  }
+};
+
+// 获取所有考试（原始方法，不使用索引）
+const getAllExamsRaw = async () => {
   try {
     const fs = await initFileSystem();
-    const exams: any[] = [];
     
-    for (const callsign of Object.keys(fs.users)) {
+    // 使用Promise.all并行获取所有用户的考试
+    const examPromises = Object.keys(fs.users).map(async (callsign) => {
       const userExams = await getUserExams(callsign);
       
-      for (const examId of Object.keys(userExams)) {
-        exams.push({
-          ...userExams[examId],
-          callsign
-        });
-      }
-    }
+      // 将用户的考试转换为数组，并添加callsign字段
+      return Object.keys(userExams).map(examId => ({
+        ...userExams[examId],
+        callsign
+      }));
+    });
     
-    return exams;
+    // 等待所有获取操作完成
+    const examArrays = await Promise.all(examPromises);
+    
+    // 将二维数组扁平化为一维数组
+    return examArrays.flat();
   } catch (error) {
     console.error('获取所有考试失败', error);
     return [];
   }
 };
 
-// 获取所有活动
-const getAllActivities = async () => {
+// 获取所有考试（使用索引和缓存）
+const getAllExams = async () => {
+  try {
+    // 使用缓存服务获取所有考试
+    const cacheKey = 'all_exams';
+    return await cacheService.getOrSet(cacheKey, async () => {
+      // 如果索引为空，初始化索引
+      if (Object.keys(examIndex).length === 0) {
+        await initIndices();
+      }
+      
+      // 从索引中获取所有考试并扁平化
+      return Object.values(examIndex).flat();
+    }, 2 * 60 * 1000); // 缓存2分钟
+  } catch (error) {
+    console.error('获取所有考试失败', error);
+    return [];
+  }
+};
+
+// 获取所有活动（原始方法，不使用索引）
+const getAllActivitiesRaw = async () => {
   try {
     const fs = await initFileSystem();
-    const activities: any[] = [];
     
-    for (const callsign of Object.keys(fs.users)) {
+    // 使用Promise.all并行获取所有用户的活动
+    const activityPromises = Object.keys(fs.users).map(async (callsign) => {
       const userActivities = await getUserActivities(callsign);
       
-      for (const activityId of Object.keys(userActivities)) {
-        activities.push({
-          ...userActivities[activityId],
-          callsign
-        });
-      }
-    }
+      // 将用户的活动转换为数组，并添加callsign字段
+      return Object.keys(userActivities).map(activityId => ({
+        ...userActivities[activityId],
+        callsign
+      }));
+    });
     
-    return activities;
+    // 等待所有获取操作完成
+    const activityArrays = await Promise.all(activityPromises);
+    
+    // 将二维数组扁平化为一维数组
+    return activityArrays.flat();
+  } catch (error) {
+    console.error('获取所有活动失败', error);
+    return [];
+  }
+};
+
+// 获取所有活动（使用索引和缓存）
+const getAllActivities = async () => {
+  try {
+    // 使用缓存服务获取所有活动
+    const cacheKey = 'all_activities';
+    return await cacheService.getOrSet(cacheKey, async () => {
+      // 如果索引为空，初始化索引
+      if (Object.keys(activityIndex).length === 0) {
+        await initIndices();
+      }
+      
+      // 从索引中获取所有活动并扁平化
+      return Object.values(activityIndex).flat();
+    }, 2 * 60 * 1000); // 缓存2分钟
   } catch (error) {
     console.error('获取所有活动失败', error);
     return [];
@@ -577,7 +792,16 @@ const clearAll = async () => {
   }
 };
 
+// 初始化文件系统和索引
+const initialize = async () => {
+  console.log('初始化文件系统和索引...');
+  await initFileSystem();
+  await initIndices();
+  console.log('文件系统和索引初始化完成');
+};
+
 export const fileSystem = {
+  initialize,
   createUserFolder,
   getUserFolder,
   saveUser,

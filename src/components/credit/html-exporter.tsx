@@ -301,8 +301,9 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
         </div>
         
         {/* 页脚 */}
-        <div style={{ marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '5px', fontSize: '10px', color: '#666' }}>
-          Skydream 征信报告 - 生成日期: {new Date().toLocaleDateString('zh-CN')}
+        <div style={{ marginTop: '15px', borderTop: '1px solid #ccc', paddingTop: '5px', fontSize: '10px', color: '#666', display: 'flex', justifyContent: 'space-between' }}>
+          <div>Skydream 征信报告 - 生成日期: {new Date().toLocaleDateString('zh-CN')} {new Date().toLocaleTimeString('zh-CN')}</div>
+          <div>此报告记录了该用户自注册系统以来的所有活动，仅供参考</div>
         </div>
       </div>
     </div>
@@ -678,8 +679,9 @@ export function exportReportToHtml(report: CreditReport, formatDate: (dateString
           </div>
           
           <!-- 页脚 -->
-          <div class="footer" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 5px; font-size: 10px; color: #666;">
-            Skydream 征信报告 - 生成日期: ${new Date().toLocaleDateString('zh-CN')}
+          <div class="footer" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 5px; font-size: 10px; color: #666; display: flex; justify-content: space-between;">
+            <div>Skydream 征信报告 - 生成日期: ${new Date().toLocaleDateString('zh-CN')} ${new Date().toLocaleTimeString('zh-CN')}</div>
+            <div>此报告记录了该用户自注册系统以来的所有活动，仅供参考</div>
           </div>
         </div>
       </body>

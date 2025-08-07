@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/auth-context';
 import { applicationApi } from '@/services/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileInput } from '@/components/ui/file-input';
+import { LoadingCard, LoadingSpinner } from '@/components/ui/loading-spinner';
+import { preloadService } from '@/services/preload-service';
 
 // 定义本页面使用的申请类型接口
 interface Application {
@@ -30,6 +32,7 @@ export function ApplicationPage() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showDialog, setShowDialog] = useState(false);
@@ -44,8 +47,14 @@ export function ApplicationPage() {
 
   useEffect(() => {
     if (user) {
-      // 使用正确的方法 getByUser 而不是 getByCallsign
-      applicationApi.getByUser(user.callsign)
+      setIsLoading(true);
+      
+      // 预加载用户数据
+      preloadService.preloadUserData(user.callsign)
+        .then(() => {
+          // 使用正确的方法 getByUser 而不是 getByCallsign
+          return applicationApi.getByUser(user.callsign);
+        })
         .then(userApplications => {
           // 将API返回的数据转换为本页面使用的Application格式
           const formattedApplications = userApplications.map(app => ({
@@ -77,6 +86,9 @@ export function ApplicationPage() {
         .catch(error => {
           console.error("获取申请记录失败:", error);
           setApplications([]);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     }
   }, [user]);
@@ -285,7 +297,9 @@ export function ApplicationPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {applications.length === 0 ? (
+            {isLoading ? (
+              <LoadingCard text="正在加载申请记录..." />
+            ) : applications.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 您还没有提交过申请
               </div>
