@@ -373,20 +373,6 @@ export function ApplicationsReviewPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">审核结果 *</label>
-                        <select 
-                          name="status"
-                          value={reviewForm.status}
-                          onChange={handleReviewChange}
-                          required
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                        >
-                          <option value="approved">通过</option>
-                          <option value="rejected">拒绝</option>
-                        </select>
-                      </div>
-
-                      <div>
                         <label className="text-sm font-medium">教员评语 *</label>
                         <textarea 
                           name="comment"
@@ -404,18 +390,35 @@ export function ApplicationsReviewPage() {
 
                       <div className="flex space-x-2 pt-2">
                         <Button 
-                          type="submit" 
+                          type="button"
+                          onClick={(e) => {
+                            setReviewForm(prev => ({ ...prev, status: 'approved' }));
+                            handleReviewSubmit(e);
+                          }}
                           className="flex-1"
-                          variant={reviewForm.status === 'approved' ? 'default' : 'destructive'}
                           disabled={isSubmitting}
                         >
-                          {isSubmitting ? (
+                          {isSubmitting && reviewForm.status === 'approved' ? (
                             '提交中...'
-                          ) : reviewForm.status === 'approved' ? (
+                          ) : (
                             <>
                               <CheckCircle className="h-4 w-4 mr-2" />
                               通过申请
                             </>
+                          )}
+                        </Button>
+                        <Button 
+                          type="button"
+                          onClick={(e) => {
+                            setReviewForm(prev => ({ ...prev, status: 'rejected' }));
+                            handleReviewSubmit(e);
+                          }}
+                          variant="destructive"
+                          className="flex-1"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting && reviewForm.status === 'rejected' ? (
+                            '提交中...'
                           ) : (
                             <>
                               <XCircle className="h-4 w-4 mr-2" />

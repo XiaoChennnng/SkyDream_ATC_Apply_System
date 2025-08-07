@@ -4,7 +4,7 @@
  */
 import { fileSystem } from './file-system';
 import { cacheService } from './cache-service';
-import { userApi, applicationApi, examApi, activityApi } from './api';
+// import { userApi, applicationApi, examApi, activityApi } from './api'; // 暂时注释掉未使用的导入
 
 class PreloadService {
   // 是否已经初始化

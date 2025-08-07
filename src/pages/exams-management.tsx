@@ -34,7 +34,8 @@ export function ExamsManagementPage() {
     teacherCallsign: user?.callsign || '',
     examDate: '',
     examTime: '',
-    notes: ''
+    notes: '',
+    action: 'confirm' as 'confirm' | 'reject'
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,7 +118,8 @@ export function ExamsManagementPage() {
           teacherCallsign: user?.callsign || '',
           examDate: exam.preferredDate || '',
           examTime: exam.preferredTime || '',
-          notes: ''
+          notes: '',
+          action: 'confirm'
         });
       } else if (activeTab === 'confirmed') {
         setEvaluationForm({
@@ -201,6 +203,62 @@ export function ExamsManagementPage() {
     } catch (error) {
       console.error('确认考试失败:', error);
       alert('确认考试失败，请重试！');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 处理拒绝考试申请
+  const handleRejectExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedExam) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const exam = examDetails[selectedExam];
+      
+      // 更新考试状态为拒绝
+      await examApi.update(selectedExam, {
+        ...exam,
+        status: 'rejected',
+        teacherCallsign: confirmForm.teacherCallsign,
+        notes: confirmForm.notes,
+        rejectedAt: new Date().toISOString()
+      });
+      
+      // 重新加载考试列表
+      const allExams = await examApi.getAll();
+      const pending = allExams.filter((ex: any) => 
+        ex.status === 'pending' || !ex.status
+      );
+      const confirmed = allExams.filter((ex: any) => 
+        ex.status === 'confirmed'
+      );
+      const completed = allExams.filter((ex: any) => 
+        ex.status === 'completed'
+      );
+      
+      setExams({
+        pending,
+        confirmed,
+        completed
+      });
+      
+      // 更新考试详情
+      const details: Record<string, any> = {};
+      allExams.forEach((ex: any) => {
+        details[ex.id] = ex;
+      });
+      setExamDetails(details);
+      
+      // 清除选中的考试
+      setSelectedExam(null);
+      
+      alert('考试申请已拒绝！');
+    } catch (error) {
+      console.error('拒绝考试申请失败:', error);
+      alert('拒绝考试申请失败，请重试！');
     } finally {
       setIsSubmitting(false);
     }
@@ -338,6 +396,7 @@ export function ExamsManagementPage() {
                   form={confirmForm} 
                   onChange={handleConfirmChange} 
                   onSubmit={handleConfirmExam} 
+                  onReject={handleRejectExam}
                   isSubmitting={isSubmitting} 
                 />
               )}

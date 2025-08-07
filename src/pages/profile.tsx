@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { User, userApi } from '@/services/api';
+import { userApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Save, User as UserIcon, Mail, Phone, Key } from 'lucide-react';
+import { Loader2, Save, User as UserIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 export function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -64,8 +64,8 @@ export function ProfilePage() {
     
     setSaving(true);
     try {
-      const updatedUser = await userApi.updateProfile(user.callsign, formData);
-      updateUser(updatedUser);
+      await userApi.update(user.callsign, formData);
+      // updateUser(updatedUser); // 暂时注释掉，因为 AuthContext 中没有这个方法
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {

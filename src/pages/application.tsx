@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
 import { applicationApi } from '@/services/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileInput } from '@/components/ui/file-input';
-import { LoadingCard, LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingCard } from '@/components/ui/loading-spinner';
 import { preloadService } from '@/services/preload-service';
 
 // 定义本页面使用的申请类型接口
@@ -29,7 +29,7 @@ interface Application {
 
 export function ApplicationPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // 暂时注释掉未使用的变量
   const [applications, setApplications] = useState<Application[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

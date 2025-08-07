@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download } from 'lucide-react';
 import { creditApi, CreditReport } from '@/services/credit-api';
-import { useAuth } from '@/contexts/auth-context';
+// import { useAuth } from '@/contexts/auth-context';
 
 // 导入组件
 import { UserList } from '@/components/credit/user-list';
@@ -17,7 +17,7 @@ import { ViolationsTab } from '@/components/credit/violations-tab';
 import { exportReportToHtml } from '@/components/credit/html-exporter';
 
 export function CreditSystemPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // 暂时注释掉未使用的变量
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,8 +126,12 @@ export function CreditSystemPage() {
         return 'bg-red-100 text-red-800';
       case 'confirmed':
         return 'bg-blue-100 text-blue-800';
-      default:
+      case 'completed':
+        return 'bg-purple-100 text-purple-800';
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 interface ConfirmFormProps {
   form: {
@@ -10,17 +10,19 @@ interface ConfirmFormProps {
     activityTime: string;
     activityCallsign: string;
     notes: string;
+    action: 'confirm' | 'reject';
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onReject: (e: React.FormEvent) => void;
   isSubmitting: boolean;
 }
 
-export function ConfirmForm({ form, onChange, onSubmit, isSubmitting }: ConfirmFormProps) {
+export function ConfirmForm({ form, onChange, onSubmit, onReject, isSubmitting }: ConfirmFormProps) {
   return (
     <div className="border-t pt-4">
-      <h3 className="font-medium mb-4">确认活动</h3>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <h3 className="font-medium mb-4">活动处理</h3>
+      <div className="space-y-4">
         <div>
           <label className="text-sm font-medium">教员呼号 *</label>
           <Input 
@@ -88,7 +90,7 @@ export function ConfirmForm({ form, onChange, onSubmit, isSubmitting }: ConfirmF
 
         <div className="flex space-x-2 pt-2">
           <Button 
-            type="submit" 
+            onClick={onSubmit}
             className="flex-1"
             disabled={isSubmitting}
           >
@@ -101,8 +103,23 @@ export function ConfirmForm({ form, onChange, onSubmit, isSubmitting }: ConfirmF
               </>
             )}
           </Button>
+          <Button 
+            onClick={onReject}
+            variant="destructive"
+            className="flex-1"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              '提交中...'
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 mr-2" />
+                拒绝申请
+              </>
+            )}
+          </Button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

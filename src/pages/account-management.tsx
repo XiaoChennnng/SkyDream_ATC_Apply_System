@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, CheckCircle, XCircle, User, Shield, Trash2, Key } from 'lucide-react';
+import { Search, Filter, CheckCircle, User, Shield, Trash2, Key } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { userApi } from '@/services/api';
 import { useAuth } from '@/contexts/auth-context';

@@ -1,5 +1,4 @@
-import React from 'react';
-import { CreditReport, CreditRecord } from '@/services/credit-api';
+import { CreditReport } from '@/services/credit-api';
 
 interface ApplicationsTabProps {
   report: CreditReport;

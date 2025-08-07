@@ -29,6 +29,7 @@ export function ActivitiesManagementPage() {
     activityTime: '',
     activityCallsign: '',
     notes: '',
+    action: 'confirm' as 'confirm' | 'reject'
   });
   const [evaluationForm, setEvaluationForm] = useState({
     teacherCallsign: user?.callsign || '',
@@ -103,6 +104,7 @@ export function ActivitiesManagementPage() {
           activityTime: activity.preferredTime || '',
           activityCallsign: activity.activityCallsign || '',
           notes: '',
+          action: 'confirm'
         });
       }
       
@@ -187,6 +189,62 @@ export function ActivitiesManagementPage() {
     } catch (error) {
       console.error('确认活动失败:', error);
       alert('确认活动失败，请重试！');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 处理拒绝活动申请
+  const handleRejectActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedActivity) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const activity = activityDetails[selectedActivity];
+      
+      // 更新活动状态为拒绝
+      await activityApi.update(selectedActivity, {
+        ...activity,
+        status: 'rejected',
+        teacherCallsign: confirmForm.teacherCallsign,
+        notes: confirmForm.notes,
+        rejectedAt: new Date().toISOString()
+      });
+      
+      // 重新加载活动列表
+      const allActivities = await activityApi.getAll();
+      const pending = allActivities.filter((act: any) => 
+        act.status === 'pending' || !act.status
+      );
+      const confirmed = allActivities.filter((act: any) => 
+        act.status === 'confirmed'
+      );
+      const completed = allActivities.filter((act: any) => 
+        act.status === 'completed'
+      );
+      
+      setActivities({
+        pending,
+        confirmed,
+        completed
+      });
+      
+      // 更新活动详情
+      const details: Record<string, any> = {};
+      allActivities.forEach((act: any) => {
+        details[act.id] = act;
+      });
+      setActivityDetails(details);
+      
+      // 清除选中的活动
+      setSelectedActivity(null);
+      
+      alert('活动申请已拒绝！');
+    } catch (error) {
+      console.error('拒绝活动申请失败:', error);
+      alert('拒绝活动申请失败，请重试！');
     } finally {
       setIsSubmitting(false);
     }
@@ -321,6 +379,7 @@ export function ActivitiesManagementPage() {
                   form={confirmForm}
                   onChange={handleConfirmChange}
                   onSubmit={handleConfirmActivity}
+                  onReject={handleRejectActivity}
                   isSubmitting={isSubmitting}
                 />
               )}

@@ -4,7 +4,7 @@ import { Activity, activityApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { Loader2, Plus, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function ActivitiesPage() {
@@ -21,11 +21,19 @@ export function ActivitiesPage() {
 
   // 获取用户的活动列表
   useEffect(() => {
-    if (user) {
-      const userActivities = activityApi.getByCallsign(user.callsign);
-      setActivities(userActivities);
-      setLoading(false);
-    }
+    const fetchActivities = async () => {
+      if (user) {
+        try {
+          const userActivities = await activityApi.getByUser(user.callsign);
+          setActivities(userActivities);
+        } catch (error) {
+          console.error('Failed to fetch activities:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchActivities();
   }, [user]);
 
   // 处理表单输入变化
@@ -38,20 +46,27 @@ export function ActivitiesPage() {
   };
 
   // 提交活动预约
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
-      const newActivity = activityApi.create({
-        callsign: user.callsign,
-        ...formData
-      });
-      setActivities(prev => [...prev, newActivity]);
-      setShowForm(false);
-      setFormData({
-        activityCallsign: '',
-        preferredDate: '',
-        preferredTime: ''
-      });
+      try {
+        const newActivity = await activityApi.create(user.callsign, {
+          activityCallsign: formData.activityCallsign,
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime,
+          controlRoom: '',
+          notes: ''
+        });
+        setActivities(prev => [...prev, newActivity]);
+        setShowForm(false);
+        setFormData({
+          activityCallsign: '',
+          preferredDate: '',
+          preferredTime: ''
+        });
+      } catch (error) {
+        console.error('Failed to create activity:', error);
+      }
     }
   };
 
@@ -63,11 +78,11 @@ export function ActivitiesPage() {
   // 获取状态标签样式
   const getStatusBadgeClass = (status: Activity['status']) => {
     switch (status) {
-      case '待确认':
+      case 'pending':
         return 'status-badge status-pending';
-      case '已确认':
+      case 'confirmed':
         return 'status-badge status-approved';
-      case '已完成':
+      case 'completed':
         return 'status-badge status-completed';
       default:
         return 'status-badge';
@@ -77,14 +92,28 @@ export function ActivitiesPage() {
   // 获取状态图标
   const getStatusIcon = (status: Activity['status']) => {
     switch (status) {
-      case '待确认':
+      case 'pending':
         return <Clock className="h-5 w-5 text-yellow-500" />;
-      case '已确认':
+      case 'confirmed':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case '已完成':
+      case 'completed':
         return <CheckCircle className="h-5 w-5 text-blue-500" />;
       default:
         return null;
+    }
+  };
+
+  // 获取状态显示文本
+  const getStatusText = (status: Activity['status']) => {
+    switch (status) {
+      case 'pending':
+        return '待确认';
+      case 'confirmed':
+        return '已确认';
+      case 'completed':
+        return '已完成';
+      default:
+        return status;
     }
   };
 
@@ -193,7 +222,7 @@ export function ActivitiesPage() {
                     <div className="flex justify-between items-start">
                       <CardTitle>{activity.activityCallsign}</CardTitle>
                       <span className={getStatusBadgeClass(activity.status)}>
-                        {activity.status}
+                        {getStatusText(activity.status)}
                       </span>
                     </div>
                     <CardDescription>
@@ -205,9 +234,9 @@ export function ActivitiesPage() {
                       <div className="flex items-center">
                         {getStatusIcon(activity.status)}
                         <span className="ml-2">
-                          {activity.status === '待确认' ? '正在等待教员确认' : 
-                           activity.status === '已确认' ? `已确认，负责教员：${activity.teacherCallsign}` : 
-                           activity.status === '已完成' ? '活动已完成' : ''}
+                          {activity.status === 'pending' ? '正在等待教员确认' : 
+                           activity.status === 'confirmed' ? `已确认，负责教员：${activity.teacherCallsign}` : 
+                           activity.status === 'completed' ? '活动已完成' : ''}
                         </span>
                       </div>
                       {activity.result && (
@@ -216,10 +245,10 @@ export function ActivitiesPage() {
                           {activity.permission && <p>获得权限：{activity.permission}</p>}
                         </div>
                       )}
-                      {activity.teacherComment && (
+                      {activity.comment && (
                         <div className="mt-2 p-3 bg-muted rounded-md text-sm">
                           <p className="font-medium">教员评语：</p>
-                          <p>{activity.teacherComment}</p>
+                          <p>{activity.comment}</p>
                         </div>
                       )}
                     </div>
@@ -254,7 +283,7 @@ export function ActivitiesPage() {
                       <h4 className="text-sm font-medium text-muted-foreground">状态</h4>
                       <p className="text-base">
                         <span className={getStatusBadgeClass(selectedActivity.status)}>
-                          {selectedActivity.status}
+                          {getStatusText(selectedActivity.status)}
                         </span>
                       </p>
                     </div>
@@ -292,10 +321,10 @@ export function ActivitiesPage() {
                     </div>
                   )}
 
-                  {selectedActivity.teacherComment && (
+                  {selectedActivity.comment && (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground">教员评语</h4>
-                      <p className="text-base whitespace-pre-wrap">{selectedActivity.teacherComment}</p>
+                      <p className="text-base whitespace-pre-wrap">{selectedActivity.comment}</p>
                     </div>
                   )}
 

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar, Clock, User, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { activityApi } from '@/services/api';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 export function ActivityPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // 暂时注释掉未使用的变量
   const [formData, setFormData] = useState({
     activityCallsign: '',
     controlRoom: '',

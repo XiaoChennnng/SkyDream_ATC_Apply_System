@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreditReport } from '@/services/credit-api';
 
@@ -7,7 +6,7 @@ interface OverviewTabProps {
   formatDate: (dateString: string) => string;
 }
 
-export function OverviewTab({ report, formatDate }: OverviewTabProps) {
+export function OverviewTab({ report }: OverviewTabProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">

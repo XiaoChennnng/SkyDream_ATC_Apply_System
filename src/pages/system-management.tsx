@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { fileSystem } from '@/services/file-system';
-import { userApi } from '@/services/api';
+// import { userApi } from '@/services/api'; // 暂时注释掉未使用的导入
 import { accountManager } from '@/services/account-manager';
 import { useAuth } from '@/contexts/auth-context';
 import { AlertCircle, Database, RefreshCw, Shield, Trash2, UserPlus } from 'lucide-react';

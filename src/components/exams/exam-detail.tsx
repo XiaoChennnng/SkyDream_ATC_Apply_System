@@ -1,4 +1,3 @@
-import React from 'react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Monitor } from 'lucide-react';
 

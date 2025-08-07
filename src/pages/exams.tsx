@@ -4,7 +4,7 @@ import { Exam, examApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { Loader2, Plus, FileText, Clock, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function ExamsPage() {
@@ -21,11 +21,19 @@ export function ExamsPage() {
 
   // 获取用户的考试列表
   useEffect(() => {
-    if (user) {
-      const userExams = examApi.getByCallsign(user.callsign);
-      setExams(userExams);
-      setLoading(false);
-    }
+    const fetchExams = async () => {
+      if (user) {
+        try {
+          const userExams = await examApi.getByUser(user.callsign);
+          setExams(userExams);
+        } catch (error) {
+          console.error('Failed to fetch exams:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchExams();
   }, [user]);
 
   // 处理表单输入变化
@@ -38,22 +46,25 @@ export function ExamsPage() {
   };
 
   // 提交考试预约
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
-      const newExam = examApi.create({
-        callsign: user.callsign,
-        examType: formData.examType,
-        preferredDate: formData.preferredDate,
-        preferredTime: formData.preferredTime
-      });
-      setExams(prev => [...prev, newExam]);
-      setShowForm(false);
-      setFormData({
-        examType: '理论考试' as const,
-        preferredDate: '',
-        preferredTime: ''
-      });
+      try {
+        const newExam = await examApi.create(user.callsign, {
+          examType: formData.examType === '理论考试' ? 'theory' : 'simulator',
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime
+        });
+        setExams(prev => [...prev, newExam]);
+        setShowForm(false);
+        setFormData({
+          examType: '理论考试' as const,
+          preferredDate: '',
+          preferredTime: ''
+        });
+      } catch (error) {
+        console.error('Failed to create exam:', error);
+      }
     }
   };
 
@@ -65,11 +76,11 @@ export function ExamsPage() {
   // 获取状态标签样式
   const getStatusBadgeClass = (status: Exam['status']) => {
     switch (status) {
-      case '待确认':
+      case 'pending':
         return 'status-badge status-pending';
-      case '已确认':
+      case 'confirmed':
         return 'status-badge status-approved';
-      case '已完成':
+      case 'completed':
         return 'status-badge status-completed';
       default:
         return 'status-badge';
@@ -79,14 +90,40 @@ export function ExamsPage() {
   // 获取状态图标
   const getStatusIcon = (status: Exam['status']) => {
     switch (status) {
-      case '待确认':
+      case 'pending':
         return <Clock className="h-5 w-5 text-yellow-500" />;
-      case '已确认':
+      case 'confirmed':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case '已完成':
+      case 'completed':
         return <CheckCircle className="h-5 w-5 text-blue-500" />;
       default:
         return null;
+    }
+  };
+
+  // 获取状态显示文本
+  const getStatusText = (status: Exam['status']) => {
+    switch (status) {
+      case 'pending':
+        return '待确认';
+      case 'confirmed':
+        return '已确认';
+      case 'completed':
+        return '已完成';
+      default:
+        return status;
+    }
+  };
+
+  // 获取考试类型显示文本
+  const getExamTypeText = (examType: Exam['examType']) => {
+    switch (examType) {
+      case 'theory':
+        return '理论考试';
+      case 'simulator':
+        return '模拟机考试';
+      default:
+        return examType;
     }
   };
 
@@ -195,9 +232,9 @@ export function ExamsPage() {
                 <Card key={exam.id} className="card-hover">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      <CardTitle>{exam.examType}</CardTitle>
+                      <CardTitle>{getExamTypeText(exam.examType)}</CardTitle>
                       <span className={getStatusBadgeClass(exam.status)}>
-                        {exam.status}
+                        {getStatusText(exam.status)}
                       </span>
                     </div>
                     <CardDescription>
@@ -209,9 +246,9 @@ export function ExamsPage() {
                       <div className="flex items-center">
                         {getStatusIcon(exam.status)}
                         <span className="ml-2">
-                          {exam.status === '待确认' ? '正在等待教员确认' : 
-                           exam.status === '已确认' ? `已确认，负责教员：${exam.teacherCallsign}` : 
-                           exam.status === '已完成' ? '考试已完成' : ''}
+                          {exam.status === 'pending' ? '正在等待教员确认' : 
+                           exam.status === 'confirmed' ? `已确认，负责教员：${exam.teacherCallsign}` : 
+                           exam.status === 'completed' ? '考试已完成' : ''}
                         </span>
                       </div>
                       {exam.result && (
@@ -220,10 +257,10 @@ export function ExamsPage() {
                           {exam.score && <p>分数：{exam.score}</p>}
                         </div>
                       )}
-                      {exam.teacherComment && (
+                      {exam.comment && (
                         <div className="mt-2 p-3 bg-muted rounded-md text-sm">
                           <p className="font-medium">教员评语：</p>
-                          <p>{exam.teacherComment}</p>
+                          <p>{exam.comment}</p>
                         </div>
                       )}
                     </div>
@@ -252,13 +289,13 @@ export function ExamsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground">考试类型</h4>
-                      <p className="text-base">{selectedExam.examType}</p>
+                      <p className="text-base">{getExamTypeText(selectedExam.examType)}</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground">状态</h4>
                       <p className="text-base">
                         <span className={getStatusBadgeClass(selectedExam.status)}>
-                          {selectedExam.status}
+                          {getStatusText(selectedExam.status)}
                         </span>
                       </p>
                     </div>
@@ -296,10 +333,10 @@ export function ExamsPage() {
                     </div>
                   )}
 
-                  {selectedExam.teacherComment && (
+                  {selectedExam.comment && (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground">教员评语</h4>
-                      <p className="text-base whitespace-pre-wrap">{selectedExam.teacherComment}</p>
+                      <p className="text-base whitespace-pre-wrap">{selectedExam.comment}</p>
                     </div>
                   )}
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -10,7 +9,6 @@ import {
   Users, 
   LogOut, 
   User, 
-  Settings,
   Database,
   Shield
 } from 'lucide-react';

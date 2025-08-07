@@ -1,4 +1,3 @@
-import React from 'react';
 import { CreditReport } from '@/services/credit-api';
 
 interface ExamsTabProps {

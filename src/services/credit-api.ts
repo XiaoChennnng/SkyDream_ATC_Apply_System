@@ -2,7 +2,8 @@
  * 征信系统API服务
  * 用于获取用户的征信信息
  */
-import { userApi, applicationApi, examApi, activityApi, attachmentApi } from './api';
+import { userApi, applicationApi, examApi, activityApi } from './api';
+// import { attachmentApi } from './api'; // 暂时注释掉未使用的导入
 import { violationApi } from './violation-api';
 
 // 征信记录类型
@@ -144,23 +145,31 @@ const creditApi = {
     const violationModerate = violations.filter(v => v.severity === 'moderate').length;
     const violationSevere = violations.filter(v => v.severity === 'severe').length;
     
-    // 计算申请统计数据
+    // 计算申请统计数据（拒绝的不计入待完成）
     const appTotal = applications.length;
     const appApproved = applications.filter(app => app.status === 'approved').length;
     const appRejected = applications.filter(app => app.status === 'rejected').length;
-    const appPending = applications.filter(app => app.status === 'pending').length;
+    const appPending = applications.filter(app => app.status === 'pending' || (!app.status)).length;
     
-    // 计算考试统计数据
+    // 计算考试统计数据（拒绝的不计入待完成）
     const examTotal = exams.length;
     const examPassed = exams.filter(exam => exam.result === 'pass').length;
     const examFailed = exams.filter(exam => exam.result === 'fail').length;
-    const examPending = exams.filter(exam => exam.status !== 'completed').length;
+    const examPending = exams.filter(exam => 
+      exam.status === 'pending' || 
+      exam.status === 'confirmed' || 
+      (!exam.status)
+    ).length;
     
-    // 计算活动统计数据
+    // 计算活动统计数据（拒绝的不计入待完成）
     const activityTotal = activities.length;
     const activityPassed = activities.filter(activity => activity.result === 'pass').length;
     const activityFailed = activities.filter(activity => activity.result === 'fail').length;
-    const activityPending = activities.filter(activity => activity.status !== 'completed').length;
+    const activityPending = activities.filter(activity => 
+      activity.status === 'pending' || 
+      activity.status === 'confirmed' || 
+      (!activity.status)
+    ).length;
     
     // 计算评分
     // 可靠性评分：基于申请和考试的完成率

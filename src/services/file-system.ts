@@ -539,7 +539,7 @@ const getAllUsers = async () => {
     const cacheKey = 'all_users';
     return await cacheService.getOrSet(cacheKey, async () => {
       const fs = await initFileSystem();
-      const users: any[] = [];
+      // const users: any[] = []; // 暂时注释掉未使用的变量
       
       // 使用Promise.all并行获取所有用户资料
       const userPromises = Object.keys(fs.users).map(async (callsign) => {
@@ -566,7 +566,7 @@ const getAllApplications = async () => {
     const cacheKey = 'all_applications';
     return await cacheService.getOrSet(cacheKey, async () => {
       const fs = await initFileSystem();
-      const applications: any[] = [];
+      // const applications: any[] = []; // 暂时注释掉未使用的变量
       
       // 使用Promise.all并行获取所有用户的申请
       const appPromises = Object.keys(fs.users).map(async (callsign) => {
