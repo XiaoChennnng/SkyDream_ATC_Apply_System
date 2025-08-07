@@ -31,12 +31,8 @@ const HtmlTemplate = ({ report, formatDate }: { report: CreditReport, formatDate
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{report.user.qq || '未提供'}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}><strong>电话</strong></td>
-              <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{report.user.phone || '未提供'}</td>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}><strong>注册时间</strong></td>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}>{formatDate(report.user.createdAt)}</td>
-            </tr>
-            <tr>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }}><strong>权限</strong></td>
               <td style={{ padding: '4px 6px', border: '1px solid #ddd' }} colSpan={3}>{report.user.permissions.join(', ') || '无'}</td>
             </tr>
